@@ -5,14 +5,14 @@ THINK=False
 
 MANAGERS = {"STAFF_SUPPORT":{ 
                  "name" :"THENDO",
-                "email" :"rakhivhanithendo@gmail.com"
+                "email" :"your_email@gmail.com"
           },
           "BCDR":{ "name":"THEMBU",
-                  "email" :"2715635@students.wits.ac.za"
+                  "email" :"your_email@gmail.com"
           },
           "MUSEUM":{
                   "name":"FHUMULANI",
-                  "email" :"mmsdectest1@gmail.com"
+                  "email" :"your_email@gmail.com"
          }
 }
 
@@ -26,5 +26,5 @@ Departments:
 here is the email:
  {email}
 
-Return only a JSON object only!! with fields: department, manager,original_email_text, reason.'''
+Return only a JSON object only!! with fields: department, manager,original_email_text, reason,kid: which must always be 5.'''
 
