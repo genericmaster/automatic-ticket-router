@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wits — Manager Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #EEF4FB;
+    --bg-2:      #FFFFFF;
+    --bg-3:      #F4F8FD;
+    --bg-4:      #E2EDF8;
+    --border:    rgba(55,138,221,0.12);
+    --border-md: rgba(55,138,221,0.22);
+    --text-1:    #0C2340;
+    --text-2:    #3A6A9E;
+    --text-3:    #7AAAD4;
+    --blue-bg:   rgba(55,138,221,0.1);
+    --blue-bd:   rgba(55,138,221,0.3);
+    --blue-tx:   #185FA5;
+    --green-bg:  rgba(29,158,117,0.1);
+    --green-bd:  rgba(29,158,117,0.3);
+    --green-tx:  #0F6E56;
+    --red-bg:    rgba(163,45,45,0.08);
+    --red-bd:    rgba(163,45,45,0.25);
+    --red-tx:    #A32D2D;
+    --amber-bg:  rgba(186,117,23,0.1);
+    --amber-bd:  rgba(186,117,23,0.3);
+    --amber-tx:  #854F0B;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: var(--bg);
+  }
+
+  .wordmark {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 2.5rem;
+  }
+
+  .login-card {
+    background: var(--bg-2);
+    border: 0.5px solid var(--border-md);
+    border-radius: 14px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 2px 16px rgba(55,138,221,0.08);
+    animation: up 0.4s ease both;
+  }
+
+  @keyframes up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .login-card h1 { font-size: 1.4rem; font-weight: 400; color: var(--text-1); margin-bottom: 0.25rem; }
+  .login-card p  { font-size: 13px; color: var(--text-3); margin-bottom: 2rem; }
+
+  .field { margin-bottom: 1rem; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 0.4rem;
+  }
+
+  input[type="email"], input[type="password"] {
+    width: 100%;
+    background: var(--bg-3);
+    border: 0.5px solid var(--border-md);
+    border-radius: 8px;
+    padding: 0.7rem 0.875rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-1);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input::placeholder { color: var(--text-3); }
+  input:focus { border-color: rgba(55,138,221,0.5); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    background: #185FA5;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 0.25rem;
+  }
+
+  .btn-primary:hover { background: #0C447C; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .error-msg {
+    display: none;
+    margin-top: 0.875rem;
+    padding: 0.65rem 0.875rem;
+    background: var(--red-bg);
+    border: 0.5px solid var(--red-bd);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--red-tx);
+    text-align: center;
+  }
+
+  /* DASHBOARD */
+  #dashboard-screen { display: none; min-height: 100vh; flex-direction: column; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1.5rem;
+    background: var(--bg-2);
+    border-bottom: 0.5px solid var(--border-md);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 0.75rem; }
+  .topbar-brand { font-size: 13px; font-weight: 500; color: var(--text-1); }
+  .topbar-user { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-3); }
+
+  .btn-logout {
+    background: transparent;
+    border: 0.5px solid var(--border-md);
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-logout:hover { background: var(--bg-4); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 49px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg-2);
+    border-right: 0.5px solid var(--border-md);
+    padding: 1.25rem 0.875rem;
+    overflow-y: auto;
+  }
+
+  .sidebar-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 0.875rem;
+    padding: 0 0.125rem;
+  }
+
+  .redirect-item {
+    background: var(--bg-3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    animation: up 0.3s ease both;
+    transition: border-color 0.15s;
+  }
+
+  .redirect-item:hover { border-color: var(--border-md); }
+
+  .redirect-arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .dept-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 20px;
+  }
+
+  .dept-old { background: var(--red-bg); border: 0.5px solid var(--red-bd); color: var(--red-tx); }
+  .dept-new { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
+  .arrow-icon { font-size: 10px; color: var(--text-3); }
+
+  .redirect-snippet {
+    font-size: 11px;
+    color: var(--text-2);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .redirect-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--text-3);
+    margin-top: 0.35rem;
+  }
+
+  .sidebar-empty { text-align: center; padding: 2rem 1rem; color: var(--text-3); font-size: 12px; }
+
+  /* MAIN */
+  .main { padding: 1.5rem; overflow-y: auto; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--bg-2);
+    border: 0.5px solid var(--border-md);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+
+  .stat-card:hover { border-color: rgba(55,138,221,0.4); }
+  .stat-value { font-size: 1.75rem; font-weight: 400; color: var(--text-1); transition: all 0.3s; font-variant-numeric: tabular-nums; }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-top: 0.2rem; }
+
+  .section-title { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 0.875rem; }
+
+  #tickets-container { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .ticket-card {
+    background: var(--bg-2);
+    border: 0.5px solid var(--border-md);
+    border-radius: 10px;
+    padding: 1.25rem;
+    animation: up 0.3s ease both;
+    transition: border-color 0.15s;
+  }
+
+  .ticket-card:hover { border-color: rgba(55,138,221,0.35); }
+
+  .ticket-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.875rem; flex-wrap: wrap; gap: 0.4rem; }
+
+  .ticket-dept {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--blue-bg);
+    border: 0.5px solid var(--blue-bd);
+    color: var(--blue-tx);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+
+  .ticket-conf { font-family: 'DM Mono', monospace; font-size: 10px; padding: 0.2rem 0.6rem; border-radius: 20px; }
+  .conf-high { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
+  .conf-mid  { background: var(--amber-bg); border: 0.5px solid var(--amber-bd); color: var(--amber-tx); }
+  .conf-low  { background: var(--red-bg);   border: 0.5px solid var(--red-bd);   color: var(--red-tx); }
+
+  .ticket-body {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.6;
+    padding: 0.625rem 0.875rem;
+    background: var(--bg-3);
+    border-left: 2px solid var(--border-md);
+    border-radius: 0;
+    margin-bottom: 0.625rem;
+  }
+
+  .ticket-reason { font-size: 12px; color: var(--text-3); font-style: italic; margin-bottom: 0.875rem; line-height: 1.5; }
+
+  .ticket-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+  .ticket-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-3); }
+
+  .feedback-area { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+
+  .btn-correct, .btn-wrong {
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    border: 0.5px solid;
+    transition: background 0.15s;
+    background: transparent;
+  }
+
+  .btn-correct { border-color: var(--green-bd); color: var(--green-tx); }
+  .btn-correct:hover { background: var(--green-bg); }
+  .btn-wrong   { border-color: var(--red-bd);   color: var(--red-tx); }
+  .btn-wrong:hover { background: var(--red-bg); }
+  .btn-correct:disabled, .btn-wrong:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .feedback-label { font-family: 'DM Mono', monospace; font-size: 10px; padding: 0.25rem 0.65rem; border-radius: 6px; }
+  .feedback-label.correct { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
+  .feedback-label.wrong   { background: var(--red-bg);   border: 0.5px solid var(--red-bd);   color: var(--red-tx); }
+
+  .redirect-form {
+    display: none;
+    margin-top: 0.625rem;
+    padding: 0.75rem;
+    background: var(--bg-3);
+    border: 0.5px solid var(--border-md);
+    border-radius: 8px;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .redirect-form.visible { display: flex; }
+  .redirect-form label { font-size: 11px; color: var(--text-3); font-family: 'DM Mono', monospace; }
+
+  .redirect-form select {
+    background: var(--bg-2);
+    border: 0.5px solid var(--border-md);
+    border-radius: 6px;
+    padding: 0.3rem 0.65rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn-redirect {
+    padding: 0.3rem 0.75rem;
+    background: #185FA5;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-redirect:hover { background: #0C447C; }
+  .btn-redirect:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-3); font-family: 'DM Mono', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="wordmark">Wits University — Manager Portal</div>
+  <div class="login-card">
+    <h1>Sign in</h1>
+    <p>Access your routed tickets</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@wits.ac.za" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" id="login-btn">Sign in</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">Wits ticket dashboard</span>
+      <span class="topbar-user" id="manager-email"></span>
+    </div>
+    <button class="btn-logout" id="logout-btn">sign out</button>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-title">Redirected tickets</div>
+      <div id="redirected-container">
+        <div class="sidebar-empty">No redirected tickets yet</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-correct">—</div>
+          <div class="stat-label">Correctly routed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-confidence">—</div>
+          <div class="stat-label">Avg confidence</div>
+        </div>
+      </div>
+
+      <div class="section-title">Your tickets</div>
+      <div id="tickets-container">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let auth, db;
+  const DEPARTMENTS = ['BCDR', 'STAFF_SUPPORT', 'MUSEUM'];
+
+  async function init() {
+    const res = await fetch('/firebase-config');
+    const config = await res.json();
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        const ds = document.getElementById('dashboard-screen');
+        ds.style.display = 'flex';
+        ds.style.flexDirection = 'column';
+        document.getElementById('manager-email').textContent = user.email;
+        loadMyTickets(user.email);
+        loadRedirectedTickets();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dashboard-screen').style.display = 'none';
+      }
+    });
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    if (!email || !password) {
+      err.textContent = 'Please enter your email and password.';
+      err.style.display = 'block';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    err.style.display = 'none';
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+    } catch (e) {
+      err.textContent = 'Invalid email or password.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+
+  function loadMyTickets(email) {
+    db.collection('tickets')
+      .where('MANAGER_EMAIL', '==', email)
+      .orderBy('timestamp', 'desc')
+      .onSnapshot(snapshot => {
+        const tickets = [];
+        snapshot.forEach(doc => tickets.push({ id: doc.id, ...doc.data() }));
+        renderMyTickets(tickets);
+        updateStats(tickets);
+      }, err => {
+        console.error(err);
+        document.getElementById('tickets-container').innerHTML =
+          '<div class="empty-state">Could not load tickets. Check browser console for a Firestore index link.</div>';
+      });
+  }
+
+  function loadRedirectedTickets() {
+    db.collection('tickets')
+      .where('redirected', '==', true)
+      .onSnapshot(snapshot => {
+        const tickets = [];
+        snapshot.forEach(doc => tickets.push({ id: doc.id, ...doc.data() }));
+        renderRedirected(tickets);
+      }, err => console.error('Redirected load error:', err));
+  }
+
+  function updateStats(tickets) {
+    document.getElementById('stat-total').textContent = tickets.length;
+    const correct = tickets.filter(t => t.feedback === 'correct').length;
+    document.getElementById('stat-correct').textContent = correct;
+    const conf = tickets.length
+      ? Math.round(tickets.reduce((s, t) => s + (Number(t.CONFIDENCE) || 0), 0) / tickets.length)
+      : 0;
+    document.getElementById('stat-confidence').textContent = conf + '%';
+  }
+
+  function confClass(c) {
+    c = Number(c);
+    if (c >= 80) return 'conf-high';
+    if (c >= 50) return 'conf-mid';
+    return 'conf-low';
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    return new Date(ts.seconds * 1000).toLocaleString();
+  }
+
+  function renderMyTickets(tickets) {
+    const container = document.getElementById('tickets-container');
+    if (!tickets.length) {
+      container.innerHTML = '<div class="empty-state">No tickets routed to you yet.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    tickets.forEach(t => container.appendChild(buildTicketCard(t)));
+  }
+
+  function buildTicketCard(t) {
+    const card = document.createElement('div');
+    card.className = 'ticket-card';
+    card.id = 'card-' + t.id;
+    const otherDepts = DEPARTMENTS.filter(d => d !== t.DEPARTMENT);
+    const hasFeedback = t.feedback;
+
+    card.innerHTML = `
+      <div class="ticket-header">
+        <span class="ticket-dept">${t.DEPARTMENT || '—'}</span>
+        <span class="ticket-conf ${confClass(t.CONFIDENCE)}">${t.CONFIDENCE || 0}% confidence</span>
+      </div>
+      <div class="ticket-body">${t.ACTUAL_TICKET || 'No content'}</div>
+      <div class="ticket-reason">${t.REASON || ''}</div>
+      <div class="ticket-footer">
+        <span class="ticket-time">${fmtTime(t.timestamp)}</span>
+        <div class="feedback-area" id="fa-${t.id}">
+          ${hasFeedback
+            ? `<span class="feedback-label ${t.feedback}">${t.feedback === 'correct' ? 'correctly routed' : 'redirected'}</span>`
+            : `<button class="btn-correct" onclick="markCorrect('${t.id}')">correct</button>
+               <button class="btn-wrong" onclick="showRedirect('${t.id}')">wrong dept</button>`
+          }
+        </div>
+      </div>
+      <div class="redirect-form" id="rf-${t.id}">
+        <label>redirect to:</label>
+        <select id="sel-${t.id}">
+          ${otherDepts.map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+        <button class="btn-redirect" onclick="submitRedirect('${t.id}')">redirect</button>
+      </div>
+    `;
+    return card;
+  }
+
+  function renderRedirected(tickets) {
+    const container = document.getElementById('redirected-container');
+    if (!tickets.length) {
+      container.innerHTML = '<div class="sidebar-empty">No redirected tickets yet</div>';
+      return;
+    }
+    container.innerHTML = '';
+    tickets.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'redirect-item';
+      item.innerHTML = `
+        <div class="redirect-arrow">
+          <span class="dept-badge dept-old">${t.original_department || '?'}</span>
+          <span class="arrow-icon">→</span>
+          <span class="dept-badge dept-new">${t.DEPARTMENT}</span>
+        </div>
+        <div class="redirect-snippet">${t.ACTUAL_TICKET || ''}</div>
+        <div class="redirect-time">${fmtTime(t.timestamp)}</div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  async function markCorrect(id) {
+    const fa = document.getElementById('fa-' + id);
+    if (fa) fa.innerHTML = '<span class="feedback-label correct">correctly routed</span>';
+    try {
+      await db.collection('tickets').doc(id).update({ feedback: 'correct' });
+    } catch(e) {
+      console.error('Mark correct error:', e);
+    }
+  }
+
+  function showRedirect(id) {
+    const rf = document.getElementById('rf-' + id);
+    if (rf) rf.classList.toggle('visible');
+  }
+async function submitRedirect(id) {
+    const rf = document.getElementById('rf-' + id);
+    const sel = document.getElementById('sel-' + id);
+    if (!sel || !rf) return;
+
+    const newDept = sel.value;
+    const btn = rf.querySelector('.btn-redirect');
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.textContent = 'redirecting...';
+
+    try {
+      const currentDoc = await db.collection('tickets').doc(id).get();
+      const originalDept = currentDoc.data().DEPARTMENT;
+      await db.collection('tickets').doc(id).update({ original_department: originalDept });
+
+      const res = await fetch('/redirect-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: id, new_department: newDept })
+      });
+
+      if (res.ok) {
+        const fa = document.getElementById('fa-' + id);
+        const rfEl = document.getElementById('rf-' + id);
+        if (fa) fa.innerHTML = '<span class="feedback-label wrong">redirected</span>';
+        if (rfEl) rfEl.classList.remove('visible');
+      } else {
+        const text = await res.text();
+        console.error('Redirect server error:', text);
+        const btnNow = document.getElementById('rf-' + id)?.querySelector('.btn-redirect');
+        if (btnNow) { btnNow.disabled = false; btnNow.textContent = 'redirect'; }
+      }
+    } catch (e) {
+      console.error('Redirect fetch error:', e);
+      const btnNow = document.getElementById('rf-' + id)?.querySelector('.btn-redirect');
+      if (btnNow) { btnNow.disabled = false; btnNow.textContent = 'redirect'; }
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

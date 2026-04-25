@@ -4,15 +4,15 @@ STREAM=False
 THINK=False
 
 MANAGERS = {"STAFF_SUPPORT":{ 
-                 "name" :"THENDO",
-                "email" :"your_email@gmail.com"
+                 "name" :"THENDONY",
+                "email" :"example@gmail.com"
           },
-          "BCDR":{ "name":"THEMBU",
-                  "email" :"your_email@gmail.com"
+          "BCDR":{ "name":"ZWIDAHO",
+                  "email" :"EXAMPLE2@gmail.com"
           },
           "MUSEUM":{
-                  "name":"FHUMULANI",
-                  "email" :"your_email@gmail.com"
+                  "name":"FHUMULANInwana",
+                  "email" :"example3@gmail.com"
          }
 }
 
@@ -26,5 +26,7 @@ Departments:
 here is the email:
  {email}
 
-Return only a JSON object only!! with fields: department, manager,original_email_text, reason,kid: which must always be 5.'''
+ read the subject and body of the email
+
+Return only a JSON object with string values only!! with fields: department, manager,original_email_text, reason,confidence_rating(numerical string within a range of 0 to 100).'''
 

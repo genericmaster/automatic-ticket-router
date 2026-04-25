@@ -14,10 +14,8 @@ def Route_email(email):
   request=requests.post(url=OLLAMA_URL,json=requests_body)
   returned_object=request.json()
   RESPONSE = returned_object["response"]
-  print(RESPONSE)
+  RESPONSE = RESPONSE.replace('```json', '').replace('```', '').strip()
   output=json.loads(s=RESPONSE)
-
   
-
   return output
 
