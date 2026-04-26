@@ -1,6 +1,8 @@
 from dotenv import load_dotenv
-from firebase_admin import auth
 import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, '.env'))
+from firebase_admin import auth
 import logging
 from flask import Flask,request,send_file,jsonify
 from flask_cors import CORS
@@ -10,18 +12,25 @@ from notifier import handler
 from database import save_to_db, redirect_ticket_db, get_managers, add_manager, update_manager, delete_manager
 from config import CONFIDENCE_THRESHOLD,ADMINS
 
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'pages')
 load_dotenv(dotenv_path=os.path.join(BASE_DIR, '.env'))
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'pages', 'static'))
 
-CORS(app)
+#locks down which origin can make requests to the backend
+CORS(app, origins=["http://127.0.0.1:5000", "http://localhost:5000"])
 
 @app.route('/ticket', methods=['POST'])
 def handle_icket():
     data = request.get_json()
-    email = data['email']
+    if not data:
+     return jsonify({"error": "invalid request"}), 400
+    email = data.get('email')
+    if not email:
+     return jsonify({"error": "email is required"}), 400
+
     DECISION = Route_email(email)
     HANDLER = Route_decision(DECISION)
     if int(DECISION["confidence_rating"])>=CONFIDENCE_THRESHOLD and int(DECISION["confidence_rating"])<=100:
@@ -38,14 +47,14 @@ def handle_icket():
 
 @app.route('/form', methods=['GET'])
 def front():
-   return send_file(os.path.join(FRONTEND_DIR, 'form.html'))
+   return send_file(os.path.join(FRONTEND_DIR,'form', 'form.html'))
 
 @app.route('/dashboard',methods=['GET'])
 def dashboard():
-    return send_file(os.path.join(FRONTEND_DIR, 'dashboard.html'))
+    return send_file(os.path.join(FRONTEND_DIR, 'dashboard', 'dashboard.html'))
 @app.route('/ticket-detail', methods=['GET'])
 def ticket_detail():
-    return send_file(os.path.join(FRONTEND_DIR, 'ticket-detail.html'))
+    return send_file(os.path.join(FRONTEND_DIR,'ticket-detail', 'ticket-detail.html'))
 
 @app.route('/firebase-config', methods=['GET'])
 def get_firebase_config():
@@ -80,7 +89,7 @@ def redirect_ticket():
     
 @app.route ('/login',methods=['GET'])
 def login():
-  return send_file(os.path.join(FRONTEND_DIR, 'login.html'))    
+  return send_file(os.path.join(FRONTEND_DIR,'login', 'login.html'))    
 
 @app.route ('/role-check',methods=['POST'])
 def role_check():
@@ -104,7 +113,7 @@ def role_check():
       
 @app.route ("/admin",methods=['GET'])
 def admin():
-   return send_file(os.path.join(FRONTEND_DIR, 'admin.html'))    
+   return send_file(os.path.join(FRONTEND_DIR,'admin', 'admin.html'))    
 
 @app.route('/add-manager', methods=['POST'])
 def add_manager_route():

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wits — Ticket Detail</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="/static/ticket-detail/ticket-detail.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-brand">Wits — Ticket detail</span>
+  </div>
+  <a class="btn-back" id="back-btn" href="#">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M8 2L4 6l4 4"/>
+    </svg>
+    Back
+  </a>
+</div>
+
+<div class="content" id="content">
+  <div class="loading">Loading ticket...</div>
+</div>
+
+<script>
+  let auth, db;
+  const params = new URLSearchParams(window.location.search);
+  const ticketId = params.get('id');
+  const from = params.get('from') || '/dashboard';
+
+  document.getElementById('back-btn').href = from;
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts.seconds * 1000).toLocaleString();
+  }
+
+  function confClass(c) {
+    c = Number(c);
+    if (c >= 80) return 'badge-conf-high';
+    if (c >= 50) return 'badge-conf-mid';
+    return 'badge-conf-low';
+  }
+
+  async function init() {
+    const res = await fetch('/firebase-config');
+    const config = await res.json();
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) { window.location.href = '/login'; return; }
+      if (!ticketId) {
+        document.getElementById('content').innerHTML = '<div class="error-state">No ticket ID provided.</div>';
+        return;
+      }
+      loadTicket();
+    });
+  }
+
+  async function loadTicket() {
+    const content = document.getElementById('content');
+    try {
+      const doc = await db.collection('tickets').doc(ticketId).get();
+      if (!doc.exists) { content.innerHTML = '<div class="error-state">Ticket not found.</div>'; return; }
+      const t = doc.data();
+      renderTicket(t);
+    } catch(e) {
+      content.innerHTML = '<div class="error-state">Failed to load ticket.</div>';
+    }
+  }
+
+  function renderTicket(t) {
+    const content = document.getElementById('content');
+    const conf = Number(t.CONFIDENCE) || 0;
+
+    const feedbackBadge = t.feedback
+      ? `<span class="badge badge-${t.feedback}">${t.feedback === 'correct' ? 'correctly routed' : 'redirected'}</span>`
+      : `<span class="badge badge-pending">pending review</span>`;
+
+    const flagBanner = t.flagged
+      ? `<div class="flag-banner"><span class="flag-dot"></span>Low confidence — this ticket was flagged for manual review</div>`
+      : '';
+
+    const redirectSection = t.redirected ? `
+      <div class="detail-section">
+        <div class="detail-section-label">Redirect flow</div>
+        <div class="redirect-flow">
+          <span class="flow-dept flow-dept-old">${t.original_department || '?'}</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-dept flow-dept-new">${t.DEPARTMENT}</span>
+        </div>
+      </div>` : '';
+
+    content.innerHTML = `
+      ${flagBanner}
+      <div class="detail-header">
+        <span class="detail-dept">${t.DEPARTMENT || '—'}</span>
+        <div class="detail-badges">
+          <span class="badge ${confClass(conf)}">${conf}% confidence</span>
+          ${feedbackBadge}
+          ${t.flagged ? '<span class="badge badge-flagged">flagged</span>' : ''}
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-label">Manager</div>
+          <div class="meta-value">${t.MANAGER || '—'}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Manager email</div>
+          <div class="meta-value mono">${t.MANAGER_EMAIL || '—'}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Submitted</div>
+          <div class="meta-value mono">${fmtTime(t.timestamp)}</div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-label">Ticket content</div>
+        <div class="detail-body">${t.ACTUAL_TICKET || 'No content'}</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-label">Routing reason</div>
+        <div class="detail-reason">${t.REASON || '—'}</div>
+      </div>
+
+      ${redirectSection}`;
+  }
+
+  init();
+</script>
+</body>
+</html>
