@@ -2,19 +2,10 @@ OLLAMA_URL = 'http://localhost:11434/api/generate'
 MODEL_NAME= 'qwen2.5:3b'
 STREAM=False
 THINK=False
+CONFIDENCE_THRESHOLD = 60
 
-MANAGERS = {"STAFF_SUPPORT":{ 
-                 "name" :"THENDONY",
-                "email" :"example@gmail.com"
-          },
-          "BCDR":{ "name":"ZWIDAHO",
-                  "email" :"EXAMPLE2@gmail.com"
-          },
-          "MUSEUM":{
-                  "name":"FHUMULANInwana",
-                  "email" :"example3@gmail.com"
-         }
-}
+
+ADMINS=['routerproject6@gmail.com']
 
 PROMPT =  '''You are a ticket routing system for Wits university...
 

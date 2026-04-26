@@ -12,406 +12,156 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:        #EEF4FB;
-    --bg-2:      #FFFFFF;
-    --bg-3:      #F4F8FD;
-    --bg-4:      #E2EDF8;
-    --border:    rgba(55,138,221,0.12);
-    --border-md: rgba(55,138,221,0.22);
-    --text-1:    #0C2340;
-    --text-2:    #3A6A9E;
-    --text-3:    #7AAAD4;
-    --blue-bg:   rgba(55,138,221,0.1);
-    --blue-bd:   rgba(55,138,221,0.3);
-    --blue-tx:   #185FA5;
-    --green-bg:  rgba(29,158,117,0.1);
-    --green-bd:  rgba(29,158,117,0.3);
-    --green-tx:  #0F6E56;
-    --red-bg:    rgba(163,45,45,0.08);
-    --red-bd:    rgba(163,45,45,0.25);
-    --red-tx:    #A32D2D;
-    --amber-bg:  rgba(186,117,23,0.1);
-    --amber-bd:  rgba(186,117,23,0.3);
-    --amber-tx:  #854F0B;
+    --sidebar-bg:    #0C447C;
+    --sidebar-bg-2:  #0A3A6B;
+    --sidebar-text:  #B5D4F4;
+    --sidebar-muted: rgba(181,212,244,0.45);
+    --sidebar-bd:    rgba(181,212,244,0.12);
+    --main-bg:       #EEF4FB;
+    --card-bg:       #185FA5;
+    --card-hover:    #1A6AB8;
+    --card-bd:       rgba(255,255,255,0.1);
+    --card-muted:    rgba(255,255,255,0.6);
+    --card-body-bg:  rgba(0,0,0,0.15);
+    --card-body-bd:  rgba(255,255,255,0.2);
+    --text-1:        #0C2340;
+    --text-2:        #3A6A9E;
+    --text-3:        #7AAAD4;
+    --green-bg:  #1D9E75;  --green-bd: #1D9E75;  --green-tx: #fff;
+    --red-bg:    #A32D2D;  --red-bd:   #A32D2D;  --red-tx:   #fff;
+    --amber-bg:  #B8730A;  --amber-bd: #B8730A;  --amber-tx: #fff;
+    --flag-bg:   #B8730A;  --flag-bd:  #B8730A;  --flag-tx:  #fff;
+    --dept-bg:   rgba(255,255,255,0.15); --dept-bd:  rgba(255,255,255,0.25);
   }
 
-  body {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 300;
-    background: var(--bg);
-    color: var(--text-1);
-    min-height: 100vh;
-  }
+  body { font-family:'Outfit',sans-serif; font-weight:300; background:var(--main-bg); color:var(--text-1); min-height:100vh; }
 
-  /* LOGIN */
-  #login-screen {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    background: var(--bg);
-  }
-
-  .wordmark {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-3);
-    margin-bottom: 2.5rem;
-  }
-
-  .login-card {
-    background: var(--bg-2);
-    border: 0.5px solid var(--border-md);
-    border-radius: 14px;
-    padding: 2.5rem;
-    width: 100%;
-    max-width: 380px;
-    box-shadow: 0 2px 16px rgba(55,138,221,0.08);
-    animation: up 0.4s ease both;
-  }
-
-  @keyframes up {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .login-card h1 { font-size: 1.4rem; font-weight: 400; color: var(--text-1); margin-bottom: 0.25rem; }
-  .login-card p  { font-size: 13px; color: var(--text-3); margin-bottom: 2rem; }
-
-  .field { margin-bottom: 1rem; }
-
-  label {
-    display: block;
-    font-size: 10px;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-3);
-    margin-bottom: 0.4rem;
-  }
-
-  input[type="email"], input[type="password"] {
-    width: 100%;
-    background: var(--bg-3);
-    border: 0.5px solid var(--border-md);
-    border-radius: 8px;
-    padding: 0.7rem 0.875rem;
-    font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 300;
-    color: var(--text-1);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  input::placeholder { color: var(--text-3); }
-  input:focus { border-color: rgba(55,138,221,0.5); }
-
-  .btn-primary {
-    width: 100%;
-    padding: 0.75rem;
-    background: #185FA5;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-top: 0.25rem;
-  }
-
-  .btn-primary:hover { background: #0C447C; }
-  .btn-primary:active { transform: scale(0.99); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .error-msg {
-    display: none;
-    margin-top: 0.875rem;
-    padding: 0.65rem 0.875rem;
-    background: var(--red-bg);
-    border: 0.5px solid var(--red-bd);
-    border-radius: 6px;
-    font-size: 12px;
-    color: var(--red-tx);
-    text-align: center;
-  }
+  @keyframes up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadein { from{opacity:0} to{opacity:1} }
 
   /* DASHBOARD */
-  #dashboard-screen { display: none; min-height: 100vh; flex-direction: column; }
+  #dashboard-screen { display:none; min-height:100vh; flex-direction:column; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:.875rem 1.5rem; background:var(--sidebar-bg); position:sticky; top:0; z-index:20; }
+  .topbar-left { display:flex; align-items:center; gap:.75rem; }
+  .topbar-brand { font-size:13px; font-weight:500; color:#fff; }
+  .topbar-user  { font-family:'DM Mono',monospace; font-size:11px; color:var(--sidebar-muted); }
+  .btn-logout { background:transparent; border:.5px solid var(--sidebar-bd); border-radius:6px; padding:.3rem .75rem; font-family:'DM Mono',monospace; font-size:11px; color:var(--sidebar-text); cursor:pointer; transition:background .15s; }
+  .btn-logout:hover { background:rgba(181,212,244,.1); }
 
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.875rem 1.5rem;
-    background: var(--bg-2);
-    border-bottom: 0.5px solid var(--border-md);
-    position: sticky;
-    top: 0;
-    z-index: 20;
-  }
+  .layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 49px); }
 
-  .topbar-left { display: flex; align-items: center; gap: 0.75rem; }
-  .topbar-brand { font-size: 13px; font-weight: 500; color: var(--text-1); }
-  .topbar-user { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-3); }
-
-  .btn-logout {
-    background: transparent;
-    border: 0.5px solid var(--border-md);
-    border-radius: 6px;
-    padding: 0.3rem 0.75rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text-2);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .btn-logout:hover { background: var(--bg-4); }
-
-  .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    min-height: calc(100vh - 49px);
-  }
-
-  /* SIDEBAR */
-  .sidebar {
-    background: var(--bg-2);
-    border-right: 0.5px solid var(--border-md);
-    padding: 1.25rem 0.875rem;
-    overflow-y: auto;
-  }
-
-  .sidebar-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-3);
-    margin-bottom: 0.875rem;
-    padding: 0 0.125rem;
-  }
-
-  .redirect-item {
-    background: var(--bg-3);
-    border: 0.5px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    animation: up 0.3s ease both;
-    transition: border-color 0.15s;
-  }
-
-  .redirect-item:hover { border-color: var(--border-md); }
-
-  .redirect-arrow {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .dept-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 0.15rem 0.45rem;
-    border-radius: 20px;
-  }
-
-  .dept-old { background: var(--red-bg); border: 0.5px solid var(--red-bd); color: var(--red-tx); }
-  .dept-new { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
-  .arrow-icon { font-size: 10px; color: var(--text-3); }
-
-  .redirect-snippet {
-    font-size: 11px;
-    color: var(--text-2);
-    line-height: 1.4;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-
-  .redirect-time {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--text-3);
-    margin-top: 0.35rem;
-  }
-
-  .sidebar-empty { text-align: center; padding: 2rem 1rem; color: var(--text-3); font-size: 12px; }
+  /* NAV SIDEBAR */
+  .sidebar { background:var(--sidebar-bg); padding:1.25rem 0.75rem; display:flex; flex-direction:column; gap:.25rem; }
+  .nav-section { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--sidebar-muted); padding:.25rem .625rem; margin-top:.75rem; margin-bottom:.25rem; }
+  .nav-section:first-child { margin-top:0; }
+  .nav-item { display:flex; align-items:center; gap:.625rem; padding:.6rem .75rem; border-radius:8px; font-size:13px; color:var(--sidebar-text); cursor:pointer; transition:background .15s, color .15s; border:none; background:transparent; width:100%; text-align:left; }
+  .nav-item:hover { background:rgba(255,255,255,.08); }
+  .nav-item.active { background:rgba(255,255,255,.12); color:#fff; }
+  .nav-icon { width:16px; height:16px; opacity:.6; flex-shrink:0; }
+  .nav-item.active .nav-icon { opacity:1; }
+  .nav-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:10px; background:rgba(255,255,255,.15); color:#fff; padding:.1rem .45rem; border-radius:20px; min-width:18px; text-align:center; }
 
   /* MAIN */
-  .main { padding: 1.5rem; overflow-y: auto; }
+  .main { background:var(--main-bg); overflow-y:auto; }
+  .page { display:none; padding:1.5rem; animation:fadein .2s ease both; }
+  .page.active { display:block; }
+  .page-title { font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); margin-bottom:1.25rem; }
 
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
+  /* stats */
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.5rem; }
+  .stat-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1rem; text-align:center; transition:background .15s; }
+  .stat-card:hover { background:var(--card-hover); }
+  .stat-value { font-size:1.75rem; font-weight:400; color:#fff; font-variant-numeric:tabular-nums; }
+  .stat-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:.2rem; }
 
-  .stat-card {
-    background: var(--bg-2);
-    border: 0.5px solid var(--border-md);
-    border-radius: 10px;
-    padding: 1rem;
-    text-align: center;
-    transition: border-color 0.15s;
-  }
+  /* ticket cards */
+  #tickets-container { display:flex; flex-direction:column; gap:.75rem; }
+  .ticket-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1.25rem; animation:up .3s ease both; transition:background .15s; color:#fff; }
+  .ticket-card:hover { background:var(--card-hover); }
+  .ticket-card.flagged { border-left:3px solid #FAC775; }
 
-  .stat-card:hover { border-color: rgba(55,138,221,0.4); }
-  .stat-value { font-size: 1.75rem; font-weight: 400; color: var(--text-1); transition: all 0.3s; font-variant-numeric: tabular-nums; }
-  .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-top: 0.2rem; }
+  .flag-banner { display:flex; align-items:center; gap:.4rem; background:var(--flag-bg); border:.5px solid var(--flag-bd); border-radius:6px; padding:.4rem .75rem; margin-bottom:.875rem; font-family:'DM Mono',monospace; font-size:11px; color:var(--flag-tx); }
+  .flag-dot { width:6px; height:6px; border-radius:50%; background:#FAC775; flex-shrink:0; }
 
-  .section-title { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 0.875rem; }
+  .ticket-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; flex-wrap:wrap; gap:.4rem; }
+  .ticket-dept { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; background:var(--dept-bg); border:.5px solid var(--dept-bd); color:#fff; padding:.2rem .6rem; border-radius:20px; }
+  .ticket-conf { font-family:'DM Mono',monospace; font-size:12px; padding:.2rem .6rem; border-radius:20px; }
+  .conf-high { background:var(--green-bg); border:.5px solid var(--green-bd); color:var(--green-tx); }
+  .conf-mid  { background:var(--amber-bg); border:.5px solid var(--amber-bd); color:var(--amber-tx); }
+  .conf-low  { background:var(--red-bg);   border:.5px solid var(--red-bd);   color:var(--red-tx); }
 
-  #tickets-container { display: flex; flex-direction: column; gap: 0.75rem; }
+  .ticket-body { font-size:15px; color:rgba(255,255,255,.85); line-height:1.6; padding:.625rem .875rem; background:var(--card-body-bg); border-left:2px solid var(--card-body-bd); margin-bottom:.625rem; }
+  .ticket-reason { font-size:14px; color:var(--card-muted); font-style:italic; margin-bottom:.875rem; line-height:1.5; }
+  .ticket-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+  .ticket-time { font-family:'DM Mono',monospace; font-size:12px; color:var(--card-muted); }
+  .feedback-area { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
 
-  .ticket-card {
-    background: var(--bg-2);
-    border: 0.5px solid var(--border-md);
-    border-radius: 10px;
-    padding: 1.25rem;
-    animation: up 0.3s ease both;
-    transition: border-color 0.15s;
-  }
+  .btn-correct, .btn-wrong { padding:.3rem .75rem; border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; border:.5px solid; transition:background .15s; background:transparent; }
+  .btn-correct { border-color:var(--green-bd); color:var(--green-tx); }
+  .btn-correct:hover { background:var(--green-bg); }
+  .btn-wrong   { border-color:var(--red-bd);   color:var(--red-tx); }
+  .btn-wrong:hover { background:var(--red-bg); }
+  .btn-correct:disabled, .btn-wrong:disabled { opacity:.3; cursor:not-allowed; }
 
-  .ticket-card:hover { border-color: rgba(55,138,221,0.35); }
+  .feedback-label { font-family:'DM Mono',monospace; font-size:12px; padding:.25rem .65rem; border-radius:6px; }
+  .feedback-label.correct { background:var(--green-bg); border:.5px solid var(--green-bd); color:var(--green-tx); }
+  .feedback-label.wrong   { background:var(--red-bg);   border:.5px solid var(--red-bd);   color:var(--red-tx); }
 
-  .ticket-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.875rem; flex-wrap: wrap; gap: 0.4rem; }
+  .redirect-form { display:none; margin-top:.625rem; padding:.75rem; background:rgba(0,0,0,.15); border:.5px solid rgba(255,255,255,.15); border-radius:8px; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  .redirect-form.visible { display:flex; }
+  .redirect-form label { font-size:11px; color:var(--card-muted); font-family:'DM Mono',monospace; }
+  .redirect-form select { background:rgba(255,255,255,.1); border:.5px solid rgba(255,255,255,.2); border-radius:6px; padding:.3rem .65rem; font-family:'Outfit',sans-serif; font-size:13px; color:#fff; outline:none; cursor:pointer; }
+  .redirect-form select option { background:#0C447C; color:#fff; }
+  .btn-redirect { padding:.3rem .75rem; background:rgba(255,255,255,.15); border:.5px solid rgba(255,255,255,.25); border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; color:#fff; cursor:pointer; transition:background .15s; }
+  .btn-redirect:hover { background:rgba(255,255,255,.25); }
+  .btn-redirect:disabled { opacity:.4; cursor:not-allowed; }
+  .confirm-row { display:none; margin-top:.5rem; align-items:center; gap:.5rem; flex-wrap:wrap; padding:.5rem .75rem; background:rgba(0,0,0,.2); border:.5px solid rgba(250,199,117,.3); border-radius:8px; }
+  .confirm-row.visible { display:flex; }
+  .confirm-text { font-family:'DM Mono',monospace; font-size:11px; color:var(--amber-tx); flex:1; }
+  .btn-confirm-yes { padding:.3rem .75rem; background:rgba(240,149,149,.15); border:.5px solid var(--red-bd); border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; color:var(--red-tx); cursor:pointer; transition:background .15s; }
+  .btn-confirm-yes:hover { background:rgba(240,149,149,.3); }
+  .btn-confirm-no  { padding:.3rem .75rem; background:transparent; border:.5px solid rgba(255,255,255,.2); border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; color:var(--card-muted); cursor:pointer; transition:background .15s; }
+  .btn-confirm-no:hover { background:rgba(255,255,255,.08); }
 
-  .ticket-dept {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: var(--blue-bg);
-    border: 0.5px solid var(--blue-bd);
-    color: var(--blue-tx);
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-  }
+  /* redirected page */
+  .redir-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1.25rem; animation:up .3s ease both; color:#fff; }
+  .redir-flow { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem; flex-wrap:wrap; }
+  .redir-dept-old { font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase; background:var(--red-bg); border:.5px solid var(--red-bd); color:var(--red-tx); padding:.2rem .6rem; border-radius:20px; }
+  .redir-dept-new { font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase; background:var(--green-bg); border:.5px solid var(--green-bd); color:var(--green-tx); padding:.2rem .6rem; border-radius:20px; }
+  .redir-arrow { color:var(--card-muted); font-size:14px; }
+  .redir-body { font-size:15px; color:rgba(255,255,255,.85); line-height:1.6; padding:.625rem .875rem; background:var(--card-body-bg); border-left:2px solid var(--card-body-bd); margin-bottom:.5rem; }
+  .redir-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--card-muted); }
 
-  .ticket-conf { font-family: 'DM Mono', monospace; font-size: 10px; padding: 0.2rem 0.6rem; border-radius: 20px; }
-  .conf-high { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
-  .conf-mid  { background: var(--amber-bg); border: 0.5px solid var(--amber-bd); color: var(--amber-tx); }
-  .conf-low  { background: var(--red-bg);   border: 0.5px solid var(--red-bd);   color: var(--red-tx); }
+  /* metrics */
+  .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.5rem; }
+  .metric-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1rem; text-align:center; }
+  .metric-val { font-size:1.75rem; font-weight:400; color:#fff; font-variant-numeric:tabular-nums; }
+  .metric-pct { font-size:14px; color:var(--card-muted); margin-top:.15rem; }
+  .metric-lbl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:.2rem; }
 
-  .ticket-body {
-    font-size: 13px;
-    color: var(--text-2);
-    line-height: 1.6;
-    padding: 0.625rem 0.875rem;
-    background: var(--bg-3);
-    border-left: 2px solid var(--border-md);
-    border-radius: 0;
-    margin-bottom: 0.625rem;
-  }
+  .dist-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1.25rem; }
+  .dist-card-title { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:1rem; }
+  .dist-row { display:flex; align-items:center; gap:.75rem; margin-bottom:.625rem; }
+  .dist-range { font-family:'DM Mono',monospace; font-size:10px; color:var(--card-muted); width:48px; flex-shrink:0; }
+  .dist-wrap { flex:1; background:rgba(255,255,255,.08); border-radius:4px; height:12px; overflow:hidden; }
+  .dist-fill { height:100%; border-radius:4px; transition:width .5s ease; }
+  .fill-low  { background:#F09595; }
+  .fill-mid  { background:#FAC775; }
+  .fill-good { background:#85B7EB; }
+  .fill-high { background:#5DCAA5; }
+  .dist-count { font-family:'DM Mono',monospace; font-size:10px; color:var(--card-muted); width:20px; text-align:right; flex-shrink:0; }
 
-  .ticket-reason { font-size: 12px; color: var(--text-3); font-style: italic; margin-bottom: 0.875rem; line-height: 1.5; }
-
-  .ticket-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
-  .ticket-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-3); }
-
-  .feedback-area { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-
-  .btn-correct, .btn-wrong {
-    padding: 0.3rem 0.75rem;
-    border-radius: 6px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    border: 0.5px solid;
-    transition: background 0.15s;
-    background: transparent;
-  }
-
-  .btn-correct { border-color: var(--green-bd); color: var(--green-tx); }
-  .btn-correct:hover { background: var(--green-bg); }
-  .btn-wrong   { border-color: var(--red-bd);   color: var(--red-tx); }
-  .btn-wrong:hover { background: var(--red-bg); }
-  .btn-correct:disabled, .btn-wrong:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .feedback-label { font-family: 'DM Mono', monospace; font-size: 10px; padding: 0.25rem 0.65rem; border-radius: 6px; }
-  .feedback-label.correct { background: var(--green-bg); border: 0.5px solid var(--green-bd); color: var(--green-tx); }
-  .feedback-label.wrong   { background: var(--red-bg);   border: 0.5px solid var(--red-bd);   color: var(--red-tx); }
-
-  .redirect-form {
-    display: none;
-    margin-top: 0.625rem;
-    padding: 0.75rem;
-    background: var(--bg-3);
-    border: 0.5px solid var(--border-md);
-    border-radius: 8px;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .redirect-form.visible { display: flex; }
-  .redirect-form label { font-size: 11px; color: var(--text-3); font-family: 'DM Mono', monospace; }
-
-  .redirect-form select {
-    background: var(--bg-2);
-    border: 0.5px solid var(--border-md);
-    border-radius: 6px;
-    padding: 0.3rem 0.65rem;
-    font-family: 'Outfit', sans-serif;
-    font-size: 13px;
-    color: var(--text-1);
-    outline: none;
-    cursor: pointer;
-  }
-
-  .btn-redirect {
-    padding: 0.3rem 0.75rem;
-    background: #185FA5;
-    border: none;
-    border-radius: 6px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .btn-redirect:hover { background: #0C447C; }
-  .btn-redirect:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-3); font-family: 'DM Mono', monospace; font-size: 12px; }
+  .loading, .empty-state { text-align:center; padding:3rem; color:var(--text-3); font-family:'DM Mono',monospace; font-size:12px; }
+  .redir-tabs { display:flex; gap:.375rem; margin-bottom:1.25rem; }
+  .redir-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .redir-tab:hover { background:rgba(55,138,221,.08); color:var(--text-2); }
+  .redir-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .redir-tab .tab-count { margin-left:.4rem; font-size:10px; opacity:.6; }
+  .redir-panel { display:none; flex-direction:column; gap:.75rem; }
+  .redir-panel.active { display:flex; }
 </style>
 </head>
 <body>
-
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="wordmark">Wits University — Manager Portal</div>
-  <div class="login-card">
-    <h1>Sign in</h1>
-    <p>Access your routed tickets</p>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="login-email" placeholder="you@wits.ac.za" />
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="login-password" placeholder="••••••••" />
-    </div>
-    <button class="btn-primary" id="login-btn">Sign in</button>
-    <div class="error-msg" id="login-error"></div>
-  </div>
-</div>
 
 <!-- DASHBOARD -->
 <div id="dashboard-screen">
@@ -425,39 +175,121 @@
 
   <div class="layout">
     <div class="sidebar">
-      <div class="sidebar-title">Redirected tickets</div>
-      <div id="redirected-container">
-        <div class="sidebar-empty">No redirected tickets yet</div>
-      </div>
+      <div class="nav-section">Navigation</div>
+      <button class="nav-item active" onclick="navigate('my-tickets')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="7" height="3" rx="1"/>
+        </svg>
+        Your tickets
+        <span class="nav-badge" id="nav-badge-tickets">0</span>
+      </button>
+      <button class="nav-item" onclick="navigate('redirected')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 8h10M8 4l4 4-4 4"/>
+        </svg>
+        Redirected
+        <span class="nav-badge" id="nav-badge-redirected">0</span>
+      </button>
+      <button class="nav-item" onclick="navigate('metrics')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="10" width="3" height="4" rx="0.5"/><rect x="6.5" y="6" width="3" height="8" rx="0.5"/><rect x="11" y="2" width="3" height="12" rx="0.5"/>
+        </svg>
+        Metrics
+      </button>
     </div>
 
     <div class="main">
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-total">—</div>
-          <div class="stat-label">Total</div>
+
+      <!-- YOUR TICKETS -->
+      <div class="page active" id="page-my-tickets">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-label">Total tickets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-correct">—</div>
+            <div class="stat-label">Correctly routed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-flagged">—</div>
+            <div class="stat-label">Flagged</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-correct">—</div>
-          <div class="stat-label">Correctly routed</div>
+        <div class="page-title">Your tickets</div>
+        <div id="tickets-container"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- REDIRECTED -->
+      <div class="page" id="page-redirected">
+        <div class="page-title">Redirected tickets</div>
+        <div class="redir-tabs">
+          <button class="redir-tab active" onclick="switchRedirTab('to')">To you<span class="tab-count" id="tab-count-to">0</span></button>
+          <button class="redir-tab" onclick="switchRedirTab('by')">By you<span class="tab-count" id="tab-count-by">0</span></button>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-confidence">—</div>
-          <div class="stat-label">Avg confidence</div>
+        <div class="redir-panel active" id="redirected-to-list"><div class="loading">Loading...</div></div>
+        <div class="redir-panel" id="redirected-by-list"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="page" id="page-metrics">
+        <div class="page-title">Your routing metrics</div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-val" id="m-correct-val">—</div>
+            <div class="metric-pct" id="m-correct-pct">—</div>
+            <div class="metric-lbl">Correctly routed</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="m-redirect-val">—</div>
+            <div class="metric-pct" id="m-redirect-pct">—</div>
+            <div class="metric-lbl">Redirected</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="m-flagged-val">—</div>
+            <div class="metric-pct" id="m-flagged-pct">—</div>
+            <div class="metric-lbl">Flagged</div>
+          </div>
+        </div>
+        <div class="dist-card">
+          <div class="dist-card-title">Confidence distribution</div>
+          <div class="dist-row">
+            <span class="dist-range">0 – 40</span>
+            <div class="dist-wrap"><div class="dist-fill fill-low"  id="bar-0" style="width:0%"></div></div>
+            <span class="dist-count" id="cnt-0">0</span>
+          </div>
+          <div class="dist-row">
+            <span class="dist-range">41 – 60</span>
+            <div class="dist-wrap"><div class="dist-fill fill-mid"  id="bar-1" style="width:0%"></div></div>
+            <span class="dist-count" id="cnt-1">0</span>
+          </div>
+          <div class="dist-row">
+            <span class="dist-range">61 – 80</span>
+            <div class="dist-wrap"><div class="dist-fill fill-good" id="bar-2" style="width:0%"></div></div>
+            <span class="dist-count" id="cnt-2">0</span>
+          </div>
+          <div class="dist-row">
+            <span class="dist-range">81 – 100</span>
+            <div class="dist-wrap"><div class="dist-fill fill-high" id="bar-3" style="width:0%"></div></div>
+            <span class="dist-count" id="cnt-3">0</span>
+          </div>
         </div>
       </div>
 
-      <div class="section-title">Your tickets</div>
-      <div id="tickets-container">
-        <div class="loading">Loading...</div>
-      </div>
     </div>
   </div>
 </div>
 
 <script>
-  let auth, db;
+  let auth, db, currentUserEmail;
   const DEPARTMENTS = ['BCDR', 'STAFF_SUPPORT', 'MUSEUM'];
+
+  function navigate(page) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[onclick="navigate('${page}')"]`).classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+  }
 
   async function init() {
     const res = await fetch('/firebase-config');
@@ -466,56 +298,51 @@
     auth = firebase.auth();
     db = firebase.firestore();
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('login-screen').style.display = 'none';
-        const ds = document.getElementById('dashboard-screen');
-        ds.style.display = 'flex';
-        ds.style.flexDirection = 'column';
-        document.getElementById('manager-email').textContent = user.email;
-        loadMyTickets(user.email);
-        loadRedirectedTickets();
-      } else {
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('dashboard-screen').style.display = 'none';
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = '/login';
+        return;
       }
+      // verify this user is actually a manager, not an admin who navigated here directly
+      const token = await user.getIdToken();
+      const roleRes = await fetch('/role-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const roleData = await roleRes.json();
+      if (roleData.role === 'admin') { window.location.href = '/admin'; return; }
+      if (roleData.role !== 'manager') { await auth.signOut(); window.location.href = '/login'; return; }
+
+      currentUserEmail = user.email;
+      const ds = document.getElementById('dashboard-screen');
+      ds.style.display = 'flex';
+      ds.style.flexDirection = 'column';
+      document.getElementById('manager-email').textContent = user.email;
+      loadMyTickets(user.email);
+      loadMyRedirectedTickets(user.email);
     });
   }
 
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    const btn = document.getElementById('login-btn');
-    const err = document.getElementById('login-error');
-    if (!email || !password) {
-      err.textContent = 'Please enter your email and password.';
-      err.style.display = 'block';
-      return;
-    }
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-    err.style.display = 'none';
-    try {
-      await auth.signInWithEmailAndPassword(email, password);
-    } catch (e) {
-      err.textContent = 'Invalid email or password.';
-      err.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Sign in';
-    }
-  });
+  document.getElementById('logout-btn').addEventListener('click', () => auth.signOut().then(() => window.location.href = '/login'));
 
-  document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
-
+  // Load tickets currently assigned to this manager, excluding ones they redirected away
   function loadMyTickets(email) {
     db.collection('tickets')
       .where('MANAGER_EMAIL', '==', email)
       .orderBy('timestamp', 'desc')
       .onSnapshot(snapshot => {
         const tickets = [];
-        snapshot.forEach(doc => tickets.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => {
+          const data = { id: doc.id, ...doc.data() };
+          // exclude tickets this manager redirected away
+          if (data.redirected && data.original_manager_email === email) return;
+          tickets.push(data);
+        });
         renderMyTickets(tickets);
         updateStats(tickets);
+        updateMetrics(tickets);
+        document.getElementById('nav-badge-tickets').textContent = tickets.length;
       }, err => {
         console.error(err);
         document.getElementById('tickets-container').innerHTML =
@@ -523,56 +350,137 @@
       });
   }
 
-  function loadRedirectedTickets() {
+  // Load redirected tickets — both directions
+  // Uses a single broad query on MANAGER_EMAIL plus a separate query on original_manager_email
+  // then splits client-side so we don't need composite indexes
+  function loadMyRedirectedTickets(email) {
+
+    // Query 1: tickets currently assigned to me that are redirected
+    // These are tickets OTHER managers sent TO me
     db.collection('tickets')
+      .where('MANAGER_EMAIL', '==', email)
       .where('redirected', '==', true)
       .onSnapshot(snapshot => {
-        const tickets = [];
-        snapshot.forEach(doc => tickets.push({ id: doc.id, ...doc.data() }));
-        renderRedirected(tickets);
-      }, err => console.error('Redirected load error:', err));
+        const toMe = [];
+        snapshot.forEach(doc => {
+          const d = { id: doc.id, ...doc.data() };
+          // only include if someone else redirected it to me
+          if (d.original_manager_email !== email) toMe.push(d);
+        });
+        _toCount = toMe.length;
+        document.getElementById('tab-count-to').textContent = _toCount;
+        renderRedirectedTo(toMe);
+        updateBadge();
+      }, err => console.error('Redirected-to load error:', err));
+
+    // Query 2: tickets I originally owned that I redirected away
+    db.collection('tickets')
+      .where('original_manager_email', '==', email)
+      .where('redirected', '==', true)
+      .onSnapshot(snapshot => {
+        const byMe = [];
+        snapshot.forEach(doc => byMe.push({ id: doc.id, ...doc.data() }));
+        _byCount = byMe.length;
+        document.getElementById('tab-count-by').textContent = _byCount;
+        renderRedirectedBy(byMe);
+        updateRedirectMetric(byMe.length);
+        updateBadge();
+      }, err => console.error('Redirected-by load error:', err));
+  }
+
+  let _toCount = 0, _byCount = 0;
+  function updateBadge() {
+    document.getElementById('nav-badge-redirected').textContent = _toCount + _byCount;
+  }
+
+  function switchRedirTab(tab) {
+    document.querySelectorAll('.redir-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.redir-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.redir-tab[onclick="switchRedirTab(\'' + tab + '\')"]').classList.add('active');
+    document.getElementById('redirected-' + tab + '-list').classList.add('active');
   }
 
   function updateStats(tickets) {
     document.getElementById('stat-total').textContent = tickets.length;
+    document.getElementById('stat-correct').textContent = tickets.filter(t => t.feedback === 'correct').length;
+    document.getElementById('stat-flagged').textContent = tickets.filter(t => t.flagged === true).length;
+  }
+
+  let cachedMyTickets = [];
+  let cachedRedirectCount = 0;
+
+  function updateMetrics(tickets) {
+    cachedMyTickets = tickets;
+    renderMetrics();
+  }
+
+  function updateRedirectMetric(count) {
+    cachedRedirectCount = count;
+    renderMetrics();
+  }
+
+  function renderMetrics() {
+    const tickets = cachedMyTickets;
+    const total = tickets.length;
+    const redirected = cachedRedirectCount;
+    if (!total && !redirected) return;
+
     const correct = tickets.filter(t => t.feedback === 'correct').length;
-    document.getElementById('stat-correct').textContent = correct;
-    const conf = tickets.length
-      ? Math.round(tickets.reduce((s, t) => s + (Number(t.CONFIDENCE) || 0), 0) / tickets.length)
-      : 0;
-    document.getElementById('stat-confidence').textContent = conf + '%';
+    const flagged  = tickets.filter(t => t.flagged === true).length;
+    const grandTotal = total + redirected;
+
+    const pct = (n, d) => d > 0 ? Math.round((n / d) * 100) + '%' : '0%';
+
+    document.getElementById('m-correct-val').textContent  = correct;
+    document.getElementById('m-correct-pct').textContent  = pct(correct, grandTotal) + ' of total';
+    document.getElementById('m-redirect-val').textContent = redirected;
+    document.getElementById('m-redirect-pct').textContent = pct(redirected, grandTotal) + ' of total';
+    document.getElementById('m-flagged-val').textContent  = flagged;
+    document.getElementById('m-flagged-pct').textContent  = pct(flagged, grandTotal) + ' of total';
+
+    // confidence distribution based on all tickets originally assigned (current + redirected away)
+    const buckets = [0, 0, 0, 0];
+    tickets.forEach(t => {
+      const c = Number(t.CONFIDENCE) || 0;
+      if (c <= 40) buckets[0]++;
+      else if (c <= 60) buckets[1]++;
+      else if (c <= 80) buckets[2]++;
+      else buckets[3]++;
+    });
+    const maxB = Math.max(...buckets, 1);
+    buckets.forEach((b, i) => {
+      document.getElementById('bar-' + i).style.width = Math.round((b / maxB) * 100) + '%';
+      document.getElementById('cnt-' + i).textContent = b;
+    });
   }
 
-  function confClass(c) {
-    c = Number(c);
-    if (c >= 80) return 'conf-high';
-    if (c >= 50) return 'conf-mid';
-    return 'conf-low';
-  }
-
-  function fmtTime(ts) {
-    if (!ts) return '';
-    return new Date(ts.seconds * 1000).toLocaleString();
-  }
+  function confClass(c) { c = Number(c); if (c >= 80) return 'conf-high'; if (c >= 50) return 'conf-mid'; return 'conf-low'; }
+  function fmtTime(ts) { if (!ts) return ''; return new Date(ts.seconds * 1000).toLocaleString(); }
 
   function renderMyTickets(tickets) {
     const container = document.getElementById('tickets-container');
-    if (!tickets.length) {
-      container.innerHTML = '<div class="empty-state">No tickets routed to you yet.</div>';
-      return;
-    }
+    if (!tickets.length) { container.innerHTML = '<div class="empty-state">No tickets routed to you yet.</div>'; return; }
     container.innerHTML = '';
     tickets.forEach(t => container.appendChild(buildTicketCard(t)));
   }
 
   function buildTicketCard(t) {
     const card = document.createElement('div');
-    card.className = 'ticket-card';
+    card.className = 'ticket-card' + (t.flagged ? ' flagged' : '');
     card.id = 'card-' + t.id;
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL' || e.target.tagName === 'STRONG') return;
+      window.location.href = '/ticket-detail?id=' + t.id + '&from=/dashboard';
+    });
     const otherDepts = DEPARTMENTS.filter(d => d !== t.DEPARTMENT);
     const hasFeedback = t.feedback;
+    const flagBanner = t.flagged
+      ? `<div class="flag-banner"><span class="flag-dot"></span>Low confidence — please verify this routing before acting</div>`
+      : '';
 
     card.innerHTML = `
+      ${flagBanner}
       <div class="ticket-header">
         <span class="ticket-dept">${t.DEPARTMENT || '—'}</span>
         <span class="ticket-conf ${confClass(t.CONFIDENCE)}">${t.CONFIDENCE || 0}% confidence</span>
@@ -585,74 +493,99 @@
           ${hasFeedback
             ? `<span class="feedback-label ${t.feedback}">${t.feedback === 'correct' ? 'correctly routed' : 'redirected'}</span>`
             : `<button class="btn-correct" onclick="markCorrect('${t.id}')">correct</button>
-               <button class="btn-wrong" onclick="showRedirect('${t.id}')">wrong dept</button>`
-          }
+               <button class="btn-wrong" onclick="showRedirect('${t.id}')">wrong dept</button>`}
         </div>
       </div>
       <div class="redirect-form" id="rf-${t.id}">
         <label>redirect to:</label>
-        <select id="sel-${t.id}">
-          ${otherDepts.map(d => `<option value="${d}">${d}</option>`).join('')}
-        </select>
-        <button class="btn-redirect" onclick="submitRedirect('${t.id}')">redirect</button>
+        <select id="sel-${t.id}">${otherDepts.map(d => `<option value="${d}">${d}</option>`).join('')}</select>
+        <button class="btn-redirect" onclick="showConfirm('${t.id}')">redirect</button>
       </div>
-    `;
+      <div class="confirm-row" id="cr-${t.id}">
+        <span class="confirm-text">redirect to <strong id="cr-dept-${t.id}"></strong>?</span>
+        <button class="btn-confirm-no" onclick="hideConfirm('${t.id}')">cancel</button>
+        <button class="btn-confirm-yes" onclick="submitRedirect('${t.id}')">yes, redirect</button>
+      </div>`;
     return card;
   }
 
-  function renderRedirected(tickets) {
-    const container = document.getElementById('redirected-container');
-    if (!tickets.length) {
-      container.innerHTML = '<div class="sidebar-empty">No redirected tickets yet</div>';
-      return;
-    }
+  function buildRedirCard(t, direction) {
+    const card = document.createElement('div');
+    card.className = 'redir-card';
+    card.style.cursor = 'pointer';
+    card.onclick = () => window.location.href = '/ticket-detail?id=' + t.id + '&from=/dashboard';
+    const fromDept = direction === 'to' ? (t.original_department || '?') : t.original_department || '?';
+    const toDept   = t.DEPARTMENT;
+    card.innerHTML = `
+      <div class="redir-flow">
+        <span class="redir-dept-old">${fromDept}</span>
+        <span class="redir-arrow">→</span>
+        <span class="redir-dept-new">${toDept}</span>
+      </div>
+      <div class="redir-body">${t.ACTUAL_TICKET || ''}</div>
+      <div class="redir-time">${fmtTime(t.timestamp)}</div>`;
+    return card;
+  }
+
+  function renderRedirectedTo(tickets) {
+    _toCount = tickets.length;
+    const container = document.getElementById('redirected-to-list');
+    if (!tickets.length) { container.innerHTML = '<div class="empty-state">No tickets have been redirected to you.</div>'; return; }
     container.innerHTML = '';
-    tickets.forEach(t => {
-      const item = document.createElement('div');
-      item.className = 'redirect-item';
-      item.innerHTML = `
-        <div class="redirect-arrow">
-          <span class="dept-badge dept-old">${t.original_department || '?'}</span>
-          <span class="arrow-icon">→</span>
-          <span class="dept-badge dept-new">${t.DEPARTMENT}</span>
-        </div>
-        <div class="redirect-snippet">${t.ACTUAL_TICKET || ''}</div>
-        <div class="redirect-time">${fmtTime(t.timestamp)}</div>
-      `;
-      container.appendChild(item);
-    });
+    tickets.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+    tickets.forEach(t => container.appendChild(buildTicketCard(t)));
+  }
+
+  function renderRedirectedBy(tickets) {
+    _byCount = tickets.length;
+    const container = document.getElementById('redirected-by-list');
+    if (!tickets.length) { container.innerHTML = '<div class="empty-state">You have not redirected any tickets yet.</div>'; return; }
+    container.innerHTML = '';
+    tickets.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+    tickets.forEach(t => container.appendChild(buildRedirCard(t, 'by')));
   }
 
   async function markCorrect(id) {
     const fa = document.getElementById('fa-' + id);
     if (fa) fa.innerHTML = '<span class="feedback-label correct">correctly routed</span>';
-    try {
-      await db.collection('tickets').doc(id).update({ feedback: 'correct' });
-    } catch(e) {
-      console.error('Mark correct error:', e);
-    }
+    try { await db.collection('tickets').doc(id).update({ feedback: 'correct' }); }
+    catch(e) { console.error('Mark correct error:', e); }
   }
 
   function showRedirect(id) {
     const rf = document.getElementById('rf-' + id);
     if (rf) rf.classList.toggle('visible');
   }
-async function submitRedirect(id) {
+
+  function showConfirm(id) {
+    const sel = document.getElementById('sel-' + id);
+    const cr = document.getElementById('cr-' + id);
+    if (!sel || !cr) return;
+    document.getElementById('cr-dept-' + id).textContent = sel.value;
+    cr.classList.add('visible');
+  }
+
+  function hideConfirm(id) {
+    const cr = document.getElementById('cr-' + id);
+    if (cr) cr.classList.remove('visible');
+  }
+
+  async function submitRedirect(id) {
     const rf = document.getElementById('rf-' + id);
     const sel = document.getElementById('sel-' + id);
     if (!sel || !rf) return;
-
     const newDept = sel.value;
     const btn = rf.querySelector('.btn-redirect');
     if (!btn) return;
-
-    btn.disabled = true;
-    btn.textContent = 'redirecting...';
+    btn.disabled = true; btn.textContent = 'redirecting...';
 
     try {
       const currentDoc = await db.collection('tickets').doc(id).get();
       const originalDept = currentDoc.data().DEPARTMENT;
-      await db.collection('tickets').doc(id).update({ original_department: originalDept });
+      await db.collection('tickets').doc(id).update({
+        original_department: originalDept,
+        original_manager_email: currentUserEmail
+      });
 
       const res = await fetch('/redirect-ticket', {
         method: 'POST',
@@ -665,6 +598,8 @@ async function submitRedirect(id) {
         const rfEl = document.getElementById('rf-' + id);
         if (fa) fa.innerHTML = '<span class="feedback-label wrong">redirected</span>';
         if (rfEl) rfEl.classList.remove('visible');
+        const crEl = document.getElementById('cr-' + id);
+        if (crEl) crEl.classList.remove('visible');
       } else {
         const text = await res.text();
         console.error('Redirect server error:', text);

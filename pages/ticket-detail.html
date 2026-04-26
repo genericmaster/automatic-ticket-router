@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wits — Ticket Detail</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-bg:    #0C447C;
+    --sidebar-bg-2:  #0A3A6B;
+    --sidebar-muted: rgba(181,212,244,0.45);
+    --sidebar-bd:    rgba(181,212,244,0.12);
+    --sidebar-text:  #B5D4F4;
+    --main-bg:       #EEF4FB;
+    --card-bg:       #185FA5;
+    --card-bd:       rgba(255,255,255,0.1);
+    --card-muted:    rgba(255,255,255,0.6);
+    --text-1:        #0C2340;
+    --text-2:        #3A6A9E;
+    --text-3:        #7AAAD4;
+    --green-bg:  #1D9E75;  --green-bd: #1D9E75;  --green-tx: #fff;
+    --red-bg:    #A32D2D;  --red-bd:   #A32D2D;  --red-tx:   #fff;
+    --amber-bg:  #B8730A;  --amber-bd: #B8730A;  --amber-tx: #fff;
+    --flag-bg:   #B8730A;  --flag-bd:  #B8730A;  --flag-tx:  #fff;
+  }
+
+  body { font-family:'Outfit',sans-serif; font-weight:300; background:var(--main-bg); color:var(--text-1); min-height:100vh; }
+
+  @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  /* TOPBAR */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:.875rem 1.5rem; background:var(--sidebar-bg); position:sticky; top:0; z-index:20; }
+  .topbar-left { display:flex; align-items:center; gap:.75rem; }
+  .topbar-brand { font-size:13px; font-weight:500; color:#fff; }
+  .btn-back { background:transparent; border:.5px solid var(--sidebar-bd); border-radius:6px; padding:.3rem .75rem; font-family:'DM Mono',monospace; font-size:11px; color:var(--sidebar-text); cursor:pointer; transition:background .15s; text-decoration:none; display:flex; align-items:center; gap:.4rem; }
+  .btn-back:hover { background:rgba(181,212,244,.1); }
+
+  /* CONTENT */
+  .content { max-width:760px; margin:2rem auto; padding:0 1.5rem 3rem; animation:up .4s ease both; }
+
+  /* HEADER ROW */
+  .detail-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:.75rem; }
+  .detail-dept { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; background:var(--card-bg); color:#fff; padding:.3rem .875rem; border-radius:20px; border:.5px solid var(--card-bd); }
+  .detail-badges { display:flex; gap:.5rem; flex-wrap:wrap; }
+  .badge { font-family:'DM Mono',monospace; font-size:10px; padding:.25rem .65rem; border-radius:20px; border:.5px solid; }
+  .badge-conf-high { background:var(--green-bg); border-color:var(--green-bd); color:var(--green-tx); }
+  .badge-conf-mid  { background:var(--amber-bg); border-color:var(--amber-bd); color:var(--amber-tx); }
+  .badge-conf-low  { background:var(--red-bg);   border-color:var(--red-bd);   color:var(--red-tx); }
+  .badge-flagged   { background:var(--flag-bg);  border-color:var(--flag-bd);  color:var(--flag-tx); }
+  .badge-correct   { background:var(--green-bg); border-color:var(--green-bd); color:var(--green-tx); }
+  .badge-redirected { background:var(--red-bg);  border-color:var(--red-bd);   color:var(--red-tx); }
+  .badge-pending   { background:var(--text-2); border-color:var(--text-2); color:#fff; }
+
+  /* SECTIONS */
+  .detail-section { background:#fff; border:.5px solid rgba(55,138,221,.15); border-radius:12px; padding:1.5rem; margin-bottom:1rem; }
+  .detail-section-label { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:.875rem; }
+  .detail-body { font-size:16px; color:var(--text-1); line-height:1.75; white-space:pre-wrap; }
+  .detail-reason { font-size:15px; color:var(--text-2); line-height:1.7; font-style:italic; }
+
+  /* META GRID */
+  .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1rem; }
+  .meta-card { background:#fff; border:.5px solid rgba(55,138,221,.15); border-radius:10px; padding:1rem; }
+  .meta-label { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:.35rem; }
+  .meta-value { font-size:16px; color:var(--text-1); font-variant-numeric:tabular-nums; }
+  .meta-value.mono { font-family:'DM Mono',monospace; font-size:14px; }
+
+  /* REDIRECT FLOW */
+  .redirect-flow { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+  .flow-dept { font-family:'DM Mono',monospace; font-size:13px; text-transform:uppercase; padding:.25rem .75rem; border-radius:20px; }
+  .flow-dept-old { background:var(--red-bg); border:.5px solid var(--red-bd); color:var(--red-tx); }
+  .flow-dept-new { background:var(--green-bg); border:.5px solid var(--green-bd); color:var(--green-tx); }
+  .flow-arrow { color:var(--text-3); font-size:18px; }
+
+  .loading { text-align:center; padding:4rem; color:var(--text-3); font-family:'DM Mono',monospace; font-size:12px; }
+  .error-state { text-align:center; padding:4rem; color:#A32D2D; font-family:'DM Mono',monospace; font-size:12px; }
+
+  /* FLAG BANNER */
+  .flag-banner { display:flex; align-items:center; gap:.5rem; background:var(--flag-bg); border:.5px solid var(--flag-bd); border-radius:8px; padding:.625rem 1rem; margin-bottom:1rem; font-family:'DM Mono',monospace; font-size:13px; color:var(--flag-tx); }
+  .flag-dot { width:7px; height:7px; border-radius:50%; background:#FAC775; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-brand">Wits — Ticket detail</span>
+  </div>
+  <a class="btn-back" id="back-btn" href="#">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M8 2L4 6l4 4"/>
+    </svg>
+    Back
+  </a>
+</div>
+
+<div class="content" id="content">
+  <div class="loading">Loading ticket...</div>
+</div>
+
+<script>
+  let auth, db;
+  const params = new URLSearchParams(window.location.search);
+  const ticketId = params.get('id');
+  const from = params.get('from') || '/dashboard';
+
+  document.getElementById('back-btn').href = from;
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts.seconds * 1000).toLocaleString();
+  }
+
+  function confClass(c) {
+    c = Number(c);
+    if (c >= 80) return 'badge-conf-high';
+    if (c >= 50) return 'badge-conf-mid';
+    return 'badge-conf-low';
+  }
+
+  async function init() {
+    const res = await fetch('/firebase-config');
+    const config = await res.json();
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) { window.location.href = '/login'; return; }
+      if (!ticketId) {
+        document.getElementById('content').innerHTML = '<div class="error-state">No ticket ID provided.</div>';
+        return;
+      }
+      loadTicket();
+    });
+  }
+
+  async function loadTicket() {
+    const content = document.getElementById('content');
+    try {
+      const doc = await db.collection('tickets').doc(ticketId).get();
+      if (!doc.exists) { content.innerHTML = '<div class="error-state">Ticket not found.</div>'; return; }
+      const t = doc.data();
+      renderTicket(t);
+    } catch(e) {
+      content.innerHTML = '<div class="error-state">Failed to load ticket.</div>';
+    }
+  }
+
+  function renderTicket(t) {
+    const content = document.getElementById('content');
+    const conf = Number(t.CONFIDENCE) || 0;
+
+    const feedbackBadge = t.feedback
+      ? `<span class="badge badge-${t.feedback}">${t.feedback === 'correct' ? 'correctly routed' : 'redirected'}</span>`
+      : `<span class="badge badge-pending">pending review</span>`;
+
+    const flagBanner = t.flagged
+      ? `<div class="flag-banner"><span class="flag-dot"></span>Low confidence — this ticket was flagged for manual review</div>`
+      : '';
+
+    const redirectSection = t.redirected ? `
+      <div class="detail-section">
+        <div class="detail-section-label">Redirect flow</div>
+        <div class="redirect-flow">
+          <span class="flow-dept flow-dept-old">${t.original_department || '?'}</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-dept flow-dept-new">${t.DEPARTMENT}</span>
+        </div>
+      </div>` : '';
+
+    content.innerHTML = `
+      ${flagBanner}
+      <div class="detail-header">
+        <span class="detail-dept">${t.DEPARTMENT || '—'}</span>
+        <div class="detail-badges">
+          <span class="badge ${confClass(conf)}">${conf}% confidence</span>
+          ${feedbackBadge}
+          ${t.flagged ? '<span class="badge badge-flagged">flagged</span>' : ''}
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-label">Manager</div>
+          <div class="meta-value">${t.MANAGER || '—'}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Manager email</div>
+          <div class="meta-value mono">${t.MANAGER_EMAIL || '—'}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Submitted</div>
+          <div class="meta-value mono">${fmtTime(t.timestamp)}</div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-label">Ticket content</div>
+        <div class="detail-body">${t.ACTUAL_TICKET || 'No content'}</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-label">Routing reason</div>
+        <div class="detail-reason">${t.REASON || '—'}</div>
+      </div>
+
+      ${redirectSection}`;
+  }
+
+  init();
+</script>
+</body>
+</html>

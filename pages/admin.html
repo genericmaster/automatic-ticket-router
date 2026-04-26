@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wits — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-bg:    #0C447C;
+    --sidebar-bg-2:  #0A3A6B;
+    --sidebar-text:  #B5D4F4;
+    --sidebar-muted: rgba(181,212,244,0.45);
+    --sidebar-bd:    rgba(181,212,244,0.12);
+    --main-bg:       #EEF4FB;
+    --card-bg:       #185FA5;
+    --card-hover:    #1A6AB8;
+    --card-bd:       rgba(255,255,255,0.1);
+    --card-muted:    rgba(255,255,255,0.6);
+    --text-1:        #0C2340;
+    --text-2:        #3A6A9E;
+    --text-3:        #7AAAD4;
+    --green-bg:  #1D9E75;  --green-bd: #1D9E75;  --green-tx: #fff;
+    --red-bg:    #A32D2D;  --red-bd:   #A32D2D;  --red-tx:   #fff;
+    --amber-bg:  #B8730A;  --amber-bd: #B8730A;  --amber-tx: #fff;
+  }
+
+  body { font-family:'Outfit',sans-serif; font-weight:300; background:var(--main-bg); color:var(--text-1); min-height:100vh; }
+
+  @keyframes up     { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadein { from{opacity:0} to{opacity:1} }
+
+  #admin-screen { display:none; min-height:100vh; flex-direction:column; }
+
+  /* TOPBAR */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:.875rem 1.5rem; background:var(--sidebar-bg); position:sticky; top:0; z-index:20; }
+  .topbar-left { display:flex; align-items:center; gap:.75rem; }
+  .topbar-brand { font-size:13px; font-weight:500; color:#fff; }
+  .topbar-badge { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; background:#B8730A; border:.5px solid #B8730A; color:#fff; padding:.15rem .5rem; border-radius:20px; }
+  .topbar-user { font-family:'DM Mono',monospace; font-size:11px; color:var(--sidebar-muted); }
+  .btn-logout { background:transparent; border:.5px solid var(--sidebar-bd); border-radius:6px; padding:.3rem .75rem; font-family:'DM Mono',monospace; font-size:11px; color:var(--sidebar-text); cursor:pointer; transition:background .15s; }
+  .btn-logout:hover { background:rgba(181,212,244,.1); }
+
+  /* LAYOUT */
+  .layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 49px); }
+
+  /* SIDEBAR */
+  .sidebar { background:var(--sidebar-bg); padding:1.25rem 0.75rem; display:flex; flex-direction:column; gap:.25rem; }
+  .nav-section { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--sidebar-muted); padding:.25rem .625rem; margin-top:.75rem; margin-bottom:.25rem; }
+  .nav-section:first-child { margin-top:0; }
+  .nav-item { display:flex; align-items:center; gap:.625rem; padding:.6rem .75rem; border-radius:8px; font-size:13px; color:var(--sidebar-text); cursor:pointer; transition:background .15s, color .15s; border:none; background:transparent; width:100%; text-align:left; }
+  .nav-item:hover { background:rgba(255,255,255,.08); }
+  .nav-item.active { background:rgba(255,255,255,.12); color:#fff; }
+  .nav-icon { width:16px; height:16px; opacity:.6; flex-shrink:0; }
+  .nav-item.active .nav-icon { opacity:1; }
+
+  /* MAIN */
+  .main { background:var(--main-bg); overflow-y:auto; }
+  .page { display:none; padding:1.5rem; animation:fadein .2s ease both; }
+  .page.active { display:block; }
+  .page-title { font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:1.25rem; }
+
+  /* STAT CARDS */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; margin-bottom:1.5rem; }
+  .stat-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1rem; text-align:center; transition:background .15s; animation:up .3s ease both; }
+  .stat-card:hover { background:var(--card-hover); }
+  .stat-value { font-size:1.75rem; font-weight:400; color:#fff; font-variant-numeric:tabular-nums; }
+  .stat-pct { font-size:12px; color:var(--card-muted); margin-top:.15rem; }
+  .stat-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:.2rem; }
+
+  /* CHARTS ROW */
+  .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+  .chart-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1.25rem; animation:up .35s ease both; }
+  .chart-title { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:1.25rem; }
+
+  /* BAR CHART */
+  .bar-row { display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; }
+  .bar-range { font-family:'DM Mono',monospace; font-size:10px; color:var(--card-muted); width:52px; flex-shrink:0; }
+  .bar-wrap { flex:1; background:rgba(255,255,255,.08); border-radius:4px; height:14px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; transition:width .6s ease; }
+  .fill-low  { background:#F09595; }
+  .fill-mid  { background:#FAC775; }
+  .fill-good { background:#85B7EB; }
+  .fill-high { background:#5DCAA5; }
+  .bar-meta { display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:10px; color:var(--card-muted); width:48px; flex-shrink:0; }
+
+  /* PIE CHART */
+  .pie-wrap { display:flex; align-items:center; gap:1.5rem; }
+  .pie-legend { display:flex; flex-direction:column; gap:.625rem; }
+  .legend-item { display:flex; align-items:center; gap:.5rem; font-size:12px; color:var(--card-muted); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  .loading { text-align:center; padding:3rem; color:var(--text-3); font-family:'DM Mono',monospace; font-size:12px; }
+
+  /* ALL TICKETS */
+  .filter-row { display:flex; gap:.5rem; margin-bottom:1rem; }
+  .filter-btn { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.35rem .875rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .filter-btn:hover { background:rgba(55,138,221,.08); }
+  .filter-btn.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .tickets-dept-tabs { display:flex; gap:.375rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+  .tickets-dept-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s; }
+  .tickets-dept-tab:hover { background:rgba(55,138,221,.08); }
+  .tickets-dept-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .admin-ticket-list { display:flex; flex-direction:column; gap:.75rem; }
+  .ticket-card { background:var(--card-bg); border:.5px solid var(--card-bd); border-radius:10px; padding:1.25rem; animation:up .3s ease both; color:#fff; }
+  .ticket-card.flagged { border-left:3px solid #B8730A; }
+  .flag-banner { display:flex; align-items:center; gap:.4rem; background:#B8730A; border:.5px solid #B8730A; border-radius:6px; padding:.4rem .75rem; margin-bottom:.875rem; font-family:'DM Mono',monospace; font-size:11px; color:#fff; }
+  .flag-dot { width:6px; height:6px; border-radius:50%; background:#fff; flex-shrink:0; }
+  .ticket-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; flex-wrap:wrap; gap:.4rem; }
+  .ticket-dept { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,.15); border:.5px solid rgba(255,255,255,.25); color:#fff; padding:.2rem .6rem; border-radius:20px; }
+  .ticket-conf { font-family:'DM Mono',monospace; font-size:12px; padding:.2rem .6rem; border-radius:20px; }
+  .conf-high { background:#1D9E75; border:.5px solid #1D9E75; color:#fff; }
+  .conf-mid  { background:#B8730A; border:.5px solid #B8730A; color:#fff; }
+  .conf-low  { background:#A32D2D; border:.5px solid #A32D2D; color:#fff; }
+  .ticket-manager { font-family:'DM Mono',monospace; font-size:12px; color:rgba(255,255,255,.4); }
+  .ticket-body { font-size:15px; color:rgba(255,255,255,.85); line-height:1.6; padding:.625rem .875rem; background:rgba(0,0,0,.15); border-left:2px solid rgba(255,255,255,.2); margin-bottom:.625rem; }
+  .ticket-reason { font-size:14px; color:rgba(255,255,255,.6); font-style:italic; margin-bottom:.875rem; line-height:1.5; }
+  .ticket-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+  .ticket-time { font-family:'DM Mono',monospace; font-size:12px; color:rgba(255,255,255,.6); }
+  .feedback-pill { font-family:'DM Mono',monospace; font-size:12px; padding:.25rem .65rem; border-radius:6px; }
+  .feedback-pill.correct  { background:#1D9E75; border:.5px solid #1D9E75; color:#fff; }
+  .feedback-pill.wrong    { background:#A32D2D; border:.5px solid #A32D2D; color:#fff; }
+  .feedback-pill.pending  { background:rgba(255,255,255,.08); border:.5px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); }
+  .empty-state { text-align:center; padding:3rem; color:var(--text-3); font-family:'DM Mono',monospace; font-size:12px; }
+
+  /* DEPARTMENT PAGE */
+  .dept-tabs { display:flex; gap:.375rem; margin-bottom:1.75rem; }
+  .dept-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1.1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .dept-tab:hover { background:rgba(55,138,221,.08); color:var(--text-2); }
+  .dept-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .dept-panel { display:none; animation:fadein .2s ease both; }
+  .dept-panel.active { display:block; }
+  .dept-data-row { display:grid; grid-template-columns:repeat(7,1fr); gap:0; margin-bottom:2rem; border:.5px solid rgba(55,138,221,.15); border-radius:10px; overflow:hidden; }
+  .dept-col { padding:1rem 1.25rem; border-right:.5px solid rgba(55,138,221,.1); }
+  .dept-col:last-child { border-right:none; }
+  .dept-col-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:.4rem; }
+  .dept-col-value { font-size:1.5rem; font-weight:400; color:var(--text-1); font-variant-numeric:tabular-nums; }
+  .dept-col-value.pct { font-size:1.1rem; color:var(--text-2); }
+  .dept-box-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:1.25rem; }
+  .dept-box-wrap { padding:1.5rem; background:#fff; border:.5px solid rgba(55,138,221,.15); border-radius:10px; }
+
+  /* COMING SOON */
+  .coming-soon { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem; color:var(--text-3); font-family:'DM Mono',monospace; font-size:12px; gap:.5rem; opacity:.5; }
+
+  /* PROMPT MANAGEMENT */
+  .prompt-main-tabs { display:flex; gap:.375rem; margin-bottom:1.25rem; }
+  .prompt-main-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1.1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s; font-weight:600; }
+  .prompt-main-tab:hover { background:rgba(55,138,221,.08); color:var(--text-2); }
+  .prompt-main-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .prompt-main-panel { display:none; }
+  .prompt-main-panel.active { display:block; }
+  .prompt-wrap { display:flex; flex-direction:column; gap:1.25rem; }
+  .prompt-section { background:#fff; border:.5px solid rgba(55,138,221,.15); border-radius:10px; padding:1.25rem; }
+  .prompt-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:.875rem; }
+  .prompt-textarea { width:100%; min-height:320px; background:var(--main-bg); border:.5px solid rgba(55,138,221,.2); border-radius:8px; padding:.875rem 1rem; font-family:'DM Mono',monospace; font-size:12px; color:var(--text-1); outline:none; resize:vertical; line-height:1.7; transition:border-color .15s; }
+  .prompt-textarea:focus { border-color:var(--card-bg); }
+  .prompt-actions { display:flex; align-items:center; justify-content:space-between; margin-top:.875rem; }
+  .prompt-msg { font-family:'DM Mono',monospace; font-size:11px; }
+  .prompt-btn-save { font-family:'DM Mono',monospace; font-size:11px; padding:.5rem 1.25rem; border-radius:6px; background:var(--card-bg); border:none; color:#fff; cursor:pointer; transition:background .15s; }
+  .prompt-btn-save:hover { background:var(--card-hover); }
+  .prompt-btn-save:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* FEW-SHOT EXAMPLES */
+  .ex-tabs { display:flex; gap:.375rem; margin-bottom:1.25rem; }
+  .ex-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s; }
+  .ex-tab:hover { background:rgba(55,138,221,.08); }
+  .ex-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .ex-panel { display:none; flex-direction:column; gap:.75rem; }
+  .ex-panel.active { display:flex; }
+  .ex-card { border:.5px solid rgba(55,138,221,.15); border-radius:8px; padding:1rem; background:var(--main-bg); }
+  .ex-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.625rem; }
+  .ex-dept { font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase; background:rgba(24,95,165,.1); border:.5px solid rgba(24,95,165,.2); color:var(--card-bg); padding:.2rem .6rem; border-radius:20px; }
+  .ex-ticket { font-size:12px; color:var(--text-1); line-height:1.6; padding:.5rem .75rem; background:#fff; border-left:2px solid rgba(55,138,221,.2); margin-bottom:.5rem; border-radius:0 4px 4px 0; }
+  .ex-reason { font-size:11px; color:var(--text-3); font-style:italic; margin-bottom:.625rem; }
+  .ex-btn-delete { font-family:'DM Mono',monospace; font-size:10px; padding:.25rem .65rem; border-radius:6px; background:transparent; border:.5px solid rgba(163,45,45,.3); color:#A32D2D; cursor:pointer; transition:background .15s; }
+  .ex-btn-delete:hover { background:rgba(163,45,45,.08); }
+  .ex-btn-add { font-family:'DM Mono',monospace; font-size:10px; padding:.25rem .65rem; border-radius:6px; background:transparent; border:.5px solid rgba(93,202,165,.4); color:#1D9E75; cursor:pointer; transition:background .15s; }
+  .ex-btn-add:hover { background:rgba(93,202,165,.1); }
+  .ex-btn-add:disabled { opacity:.4; cursor:not-allowed; }
+  .ex-subsection-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:.75rem; }
+  .ex-add-tabs { display:flex; gap:.375rem; margin-bottom:1rem; }
+  .ex-add-tab { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:.4rem 1rem; border-radius:6px; border:.5px solid rgba(55,138,221,.25); background:transparent; color:var(--text-3); cursor:pointer; transition:background .15s,color .15s; font-weight:600; }
+  .ex-add-tab:hover { background:rgba(55,138,221,.08); color:var(--text-2); }
+  .ex-add-tab.active { background:var(--card-bg); border-color:var(--card-bd); color:#fff; }
+  .ex-add-panel { display:none; flex-direction:column; gap:.75rem; }
+  .ex-add-panel.active { display:flex; }
+
+  /* MANAGER ACCOUNTS */
+  .mgr-table { width:100%; border-collapse:collapse; margin-bottom:2rem; }
+  .mgr-table th { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); padding:.5rem .75rem; text-align:left; border-bottom:.5px solid rgba(55,138,221,.15); }
+  .mgr-table td { padding:.75rem; border-bottom:.5px solid rgba(55,138,221,.08); font-size:13px; color:var(--text-1); vertical-align:middle; }
+  .mgr-table tr:last-child td { border-bottom:none; }
+  .mgr-table tr:hover td { background:rgba(55,138,221,.04); }
+  .mgr-edit-input { background:var(--main-bg); border:.5px solid rgba(55,138,221,.25); border-radius:6px; padding:.35rem .65rem; font-family:'Outfit',sans-serif; font-size:13px; color:var(--text-1); outline:none; width:100%; transition:border-color .15s; }
+  .mgr-edit-input:focus { border-color:var(--card-bg); }
+  .mgr-btn { font-family:'DM Mono',monospace; font-size:10px; padding:.3rem .7rem; border-radius:6px; cursor:pointer; border:.5px solid; transition:background .15s; background:transparent; }
+  .mgr-btn-edit  { border-color:rgba(55,138,221,.3); color:var(--text-2); }
+  .mgr-btn-edit:hover  { background:rgba(55,138,221,.08); }
+  .mgr-btn-save  { border-color:rgba(93,202,165,.4); color:#1D9E75; }
+  .mgr-btn-save:hover  { background:rgba(93,202,165,.1); }
+  .mgr-btn-cancel { border-color:rgba(55,138,221,.2); color:var(--text-3); }
+  .mgr-btn-cancel:hover { background:rgba(55,138,221,.05); }
+  .mgr-btn-delete { border-color:rgba(163,45,45,.3); color:#A32D2D; }
+  .mgr-btn-delete:hover { background:rgba(163,45,45,.08); }
+  .mgr-confirm-row { display:flex; align-items:center; gap:.5rem; padding:.4rem .75rem; background:rgba(163,45,45,.07); border:.5px solid rgba(163,45,45,.2); border-radius:6px; margin-top:.4rem; }
+  .mgr-confirm-text { font-family:'DM Mono',monospace; font-size:11px; color:#A32D2D; flex:1; }
+  .mgr-btn-confirm-yes { font-family:'DM Mono',monospace; font-size:10px; padding:.25rem .65rem; border-radius:6px; background:rgba(163,45,45,.1); border:.5px solid rgba(163,45,45,.3); color:#A32D2D; cursor:pointer; transition:background .15s; }
+  .mgr-btn-confirm-yes:hover { background:rgba(163,45,45,.2); }
+  .mgr-btn-confirm-no { font-family:'DM Mono',monospace; font-size:10px; padding:.25rem .65rem; border-radius:6px; background:transparent; border:.5px solid rgba(55,138,221,.2); color:var(--text-3); cursor:pointer; transition:background .15s; }
+  .mgr-btn-confirm-no:hover { background:rgba(55,138,221,.05); }
+  .mgr-btn-actions { display:flex; gap:.4rem; }
+  .mgr-add-section { background:#fff; border:.5px solid rgba(55,138,221,.15); border-radius:10px; padding:1.25rem; }
+  .mgr-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:1rem; }
+  .mgr-form-row { display:flex; gap:.75rem; align-items:flex-end; flex-wrap:wrap; }
+  .mgr-field { display:flex; flex-direction:column; gap:.35rem; flex:1; min-width:140px; }
+  .mgr-field-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .mgr-input { background:var(--main-bg); border:.5px solid rgba(55,138,221,.25); border-radius:6px; padding:.5rem .75rem; font-family:'Outfit',sans-serif; font-size:13px; color:var(--text-1); outline:none; transition:border-color .15s; }
+  .mgr-input:focus { border-color:var(--card-bg); }
+  .mgr-btn-add { font-family:'DM Mono',monospace; font-size:11px; padding:.5rem 1.25rem; border-radius:6px; background:var(--card-bg); border:none; color:#fff; cursor:pointer; transition:background .15s; white-space:nowrap; }
+  .mgr-btn-add:hover { background:var(--card-hover); }
+  .mgr-btn-add:disabled { opacity:.5; cursor:not-allowed; }
+  .mgr-msg { font-family:'DM Mono',monospace; font-size:11px; margin-top:.75rem; }
+</style>
+</head>
+<body>
+
+<div id="admin-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">Wits Admin</span>
+      <span class="topbar-badge">admin</span>
+      <span class="topbar-user" id="admin-email"></span>
+    </div>
+    <button class="btn-logout" id="logout-btn">sign out</button>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-section">Navigation</div>
+      <button class="nav-item active" onclick="navigate('overview')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+        </svg>
+        Overview
+      </button>
+      <button class="nav-item" onclick="navigate('tickets')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="7" height="3" rx="1"/>
+        </svg>
+        All Tickets
+      </button>
+      <button class="nav-item" onclick="navigate('departments')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="4" r="2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+        </svg>
+        Departments
+      </button>
+      <button class="nav-item" onclick="navigate('managers')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="5" cy="5" r="2"/><circle cx="11" cy="5" r="2"/><path d="M1 14c0-2.2 1.8-4 4-4s4 1.8 4 4"/><path d="M11 10c1.7.3 3 1.8 3 3.5"/>
+        </svg>
+        Managers
+      </button>
+      <button class="nav-item" onclick="navigate('prompt')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 4h12M2 8h8M2 12h5"/>
+        </svg>
+        Prompt
+      </button>
+    </div>
+
+    <div class="main">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="page-title">System overview</div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value" id="ov-total">—</div>
+            <div class="stat-pct">&nbsp;</div>
+            <div class="stat-label">Total tickets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="ov-correct">—</div>
+            <div class="stat-pct" id="ov-correct-pct">—</div>
+            <div class="stat-label">Correctly routed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="ov-flagged">—</div>
+            <div class="stat-pct" id="ov-flagged-pct">—</div>
+            <div class="stat-label">Flagged</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="ov-redirected">—</div>
+            <div class="stat-pct" id="ov-redirected-pct">—</div>
+            <div class="stat-label">Redirected</div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <!-- COLUMN CHART -->
+          <div class="chart-card">
+            <div class="chart-title">Confidence distribution</div>
+            <div style="display:flex;align-items:flex-end;gap:.75rem;height:120px;padding-bottom:.5rem;">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;height:100%;justify-content:flex-end;">
+                <span id="cnt-0" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.6);">0</span>
+                <div id="bar-0" style="width:100%;background:#F09595;border-radius:4px 4px 0 0;height:0px;transition:height .6s ease;min-height:0;"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;">0–40</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;height:100%;justify-content:flex-end;">
+                <span id="cnt-1" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.6);">0</span>
+                <div id="bar-1" style="width:100%;background:#FAC775;border-radius:4px 4px 0 0;height:0px;transition:height .6s ease;min-height:0;"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;">41–60</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;height:100%;justify-content:flex-end;">
+                <span id="cnt-2" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.6);">0</span>
+                <div id="bar-2" style="width:100%;background:#85B7EB;border-radius:4px 4px 0 0;height:0px;transition:height .6s ease;min-height:0;"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;">61–80</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;height:100%;justify-content:flex-end;">
+                <span id="cnt-3" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.6);">0</span>
+                <div id="bar-3" style="width:100%;background:#5DCAA5;border-radius:4px 4px 0 0;height:0px;transition:height .6s ease;min-height:0;"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;">81–100</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PIE CHART -->
+          <div class="chart-card">
+            <div class="chart-title">Routing breakdown</div>
+            <div class="pie-wrap">
+              <svg id="pie-svg" width="140" height="140" viewBox="0 0 140 140"></svg>
+              <div class="pie-legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#5DCAA5"></span><span id="leg-correct">Correctly routed — 0%</span></div>
+                <div class="legend-item"><span class="legend-dot" style="background:#FAC775"></span><span id="leg-flagged">Flagged — 0%</span></div>
+                <div class="legend-item"><span class="legend-dot" style="background:#F09595"></span><span id="leg-redirected">Redirected — 0%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL TICKETS -->
+      <div class="page" id="page-tickets">
+        <div class="page-title">All tickets</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="setFilter('all')">All</button>
+          <button class="filter-btn" onclick="setFilter('flagged')">Flagged</button>
+          <button class="filter-btn" onclick="setFilter('redirected')">Redirected</button>
+        </div>
+        <div class="tickets-dept-tabs" id="tickets-dept-tabs"></div>
+        <div class="admin-ticket-list" id="admin-ticket-list"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- DEPARTMENTS -->
+      <div class="page" id="page-departments">
+        <div class="page-title">Department breakdown</div>
+        <div class="dept-tabs" id="dept-tabs"></div>
+        <div id="dept-panels"></div>
+      </div>
+
+      <!-- MANAGERS -->
+      <div class="page" id="page-managers">
+        <div class="page-title">Manager accounts</div>
+        <div id="managers-list"><div class="loading">Loading...</div></div>
+        <div class="mgr-add-section">
+          <div class="mgr-section-label">Add new manager</div>
+          <div class="mgr-form-row">
+            <div class="mgr-field"><div class="mgr-field-label">Name</div><input class="mgr-input" id="new-name" placeholder="e.g. Thendo" /></div>
+            <div class="mgr-field"><div class="mgr-field-label">Email</div><input class="mgr-input" id="new-email" placeholder="manager@wits.ac.za" /></div>
+            <div class="mgr-field"><div class="mgr-field-label">Department</div><input class="mgr-input" id="new-dept" placeholder="e.g. BCDR" /></div>
+            <button class="mgr-btn-add" id="add-manager-btn" onclick="addManager()">Add manager</button>
+          </div>
+          <div class="mgr-msg" id="add-msg"></div>
+        </div>
+      </div>
+
+      <!-- PROMPT -->
+      <div class="page" id="page-prompt">
+        <div class="page-title">Prompt management</div>
+        <div class="prompt-main-tabs">
+          <button class="prompt-main-tab active" onclick="switchPromptTab('prompt')">Current prompt</button>
+          <button class="prompt-main-tab" onclick="switchPromptTab('examples')">Few-shot examples</button>
+        </div>
+        <div class="prompt-main-panel active" id="prompt-tab-prompt">
+          <div class="prompt-section">
+            <textarea class="prompt-textarea" id="prompt-textarea" spellcheck="false"></textarea>
+            <div class="prompt-actions">
+              <div class="prompt-msg" id="prompt-msg"></div>
+              <button class="prompt-btn-save" id="prompt-save-btn" onclick="savePrompt()">Save prompt</button>
+            </div>
+          </div>
+        </div>
+        <div class="prompt-main-panel" id="prompt-tab-examples">
+          <div class="prompt-section">
+            <div class="ex-tabs">
+              <button class="ex-tab active" onclick="switchExTab('current')">Current examples</button>
+              <button class="ex-tab" onclick="switchExTab('add')">Add examples</button>
+            </div>
+            <div class="ex-panel active" id="ex-panel-current">
+              <div id="examples-list"><div class="loading">Loading...</div></div>
+            </div>
+            <div class="ex-panel" id="ex-panel-add">
+              <div class="ex-add-tabs">
+                <button class="ex-add-tab active" onclick="switchAddTab('correct')">Correctly routed</button>
+                <button class="ex-add-tab" onclick="switchAddTab('redirected')">Redirected</button>
+              </div>
+              <div class="ex-add-panel active" id="ex-add-correct">
+                <div id="correct-tickets-list"><div class="loading">Loading...</div></div>
+              </div>
+              <div class="ex-add-panel" id="ex-add-redirected">
+                <div id="redirected-tickets-list"><div class="loading">Loading...</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let auth, db;
+
+  function navigate(page) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[onclick="navigate('${page}')"]`).classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+  }
+
+  async function init() {
+    const res = await fetch('/firebase-config');
+    const config = await res.json();
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) { window.location.href = '/login'; return; }
+
+      const token = await user.getIdToken();
+      const roleRes = await fetch('/role-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const roleData = await roleRes.json();
+      if (roleData.role !== 'admin') { window.location.href = '/dashboard'; return; }
+
+      document.getElementById('admin-email').textContent = user.email;
+      const screen = document.getElementById('admin-screen');
+      screen.style.display = 'flex';
+      screen.style.flexDirection = 'column';
+      loadOverview();
+      loadManagers();
+      loadPrompt();
+      loadExamples();
+      loadCorrectTickets();
+    });
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', () =>
+    auth.signOut().then(() => window.location.href = '/login')
+  );
+
+  let _allTickets = [];
+  let _activeFilter = 'all';
+  let _activeDept = 'ALL';
+
+  function loadOverview() {
+    db.collection('tickets').onSnapshot(snapshot => {
+      _allTickets = [];
+      snapshot.forEach(doc => _allTickets.push({ id: doc.id, ...doc.data() }));
+      renderOverview(_allTickets);
+      renderDepartments(_allTickets);
+      renderTicketDeptTabs(_allTickets);
+      renderAdminTickets();
+    });
+  }
+
+  function setFilter(filter) {
+    _activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.filter-btn[onclick="setFilter('${filter}')"]`).classList.add('active');
+    renderAdminTickets();
+  }
+
+  function setTicketDept(dept) {
+    _activeDept = dept;
+    document.querySelectorAll('.tickets-dept-tab').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tickets-dept-tab[data-dept="${dept}"]`).classList.add('active');
+    renderAdminTickets();
+  }
+
+  function renderTicketDeptTabs(tickets) {
+    const tabsEl = document.getElementById('tickets-dept-tabs');
+    const depts = ['ALL', ...new Set(tickets.map(t => t.DEPARTMENT || 'UNKNOWN'))];
+    tabsEl.innerHTML = '';
+    depts.forEach(dept => {
+      const btn = document.createElement('button');
+      btn.className = 'tickets-dept-tab' + (dept === 'ALL' ? ' active' : '');
+      btn.textContent = dept;
+      btn.dataset.dept = dept;
+      btn.onclick = () => setTicketDept(dept);
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function renderAdminTickets() {
+    const container = document.getElementById('admin-ticket-list');
+    let tickets = [..._allTickets];
+
+    if (_activeFilter === 'flagged')    tickets = tickets.filter(t => t.flagged === true);
+    if (_activeFilter === 'redirected') tickets = tickets.filter(t => t.redirected === true);
+    if (_activeDept !== 'ALL')          tickets = tickets.filter(t => (t.DEPARTMENT || 'UNKNOWN') === _activeDept);
+
+    tickets.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+
+    if (!tickets.length) { container.innerHTML = '<div class="empty-state">No tickets match this filter.</div>'; return; }
+    container.innerHTML = '';
+    tickets.forEach(t => {
+      const conf = Number(t.CONFIDENCE) || 0;
+      const confClass = conf >= 80 ? 'conf-high' : conf >= 50 ? 'conf-mid' : 'conf-low';
+      const fmtTime = ts => ts ? new Date(ts.seconds * 1000).toLocaleString() : '';
+      const feedbackPill = t.feedback
+        ? `<span class="feedback-pill ${t.feedback}">${t.feedback === 'correct' ? 'correctly routed' : 'redirected'}</span>`
+        : `<span class="feedback-pill pending">pending</span>`;
+
+      const card = document.createElement('div');
+      card.className = 'ticket-card' + (t.flagged ? ' flagged' : '');
+      card.style.cursor = 'pointer';
+      card.onclick = () => window.location.href = '/ticket-detail?id=' + t.id + '&from=/admin';
+      card.innerHTML = `
+        ${t.flagged ? `<div class="flag-banner"><span class="flag-dot"></span>Low confidence — flagged for review</div>` : ''}
+        <div class="ticket-header">
+          <span class="ticket-dept">${t.DEPARTMENT || '—'}</span>
+          <span class="ticket-conf ${confClass}">${conf}% confidence</span>
+          <span class="ticket-manager">${t.MANAGER || ''}</span>
+        </div>
+        <div class="ticket-body">${t.ACTUAL_TICKET || 'No content'}</div>
+        <div class="ticket-reason">${t.REASON || ''}</div>
+        <div class="ticket-footer">
+          <span class="ticket-time">${fmtTime(t.timestamp)}</span>
+          ${feedbackPill}
+        </div>`;
+      container.appendChild(card);
+    });
+  }
+
+  function renderDepartments(tickets) {
+    const tabsEl   = document.getElementById('dept-tabs');
+    const panelsEl = document.getElementById('dept-panels');
+    if (!tickets.length) { panelsEl.innerHTML = '<div class="loading">No tickets yet.</div>'; return; }
+
+    const depts = {};
+    tickets.forEach(t => {
+      const d = t.DEPARTMENT || 'UNKNOWN';
+      if (!depts[d]) depts[d] = [];
+      depts[d].push(t);
+    });
+
+    tabsEl.innerHTML = '';
+    panelsEl.innerHTML = '';
+    const deptKeys = Object.keys(depts);
+
+    deptKeys.forEach((dept, idx) => {
+      const dTickets  = depts[dept];
+      const total     = dTickets.length;
+      const correct   = dTickets.filter(t => t.feedback === 'correct').length;
+      const flagged   = dTickets.filter(t => t.flagged === true).length;
+      const redirected= dTickets.filter(t => t.redirected === true).length;
+      const pct       = n => total > 0 ? Math.round((n / total) * 100) + '%' : '0%';
+      const confs     = dTickets.map(t => Number(t.CONFIDENCE) || 0).sort((a,b) => a-b);
+      const n         = confs.length;
+      const median    = n % 2 === 0 ? Math.round((confs[n/2-1]+confs[n/2])/2) : confs[Math.floor(n/2)];
+      const q1        = confs[Math.floor(n/4)];
+      const q3        = confs[Math.floor(3*n/4)];
+      const min       = confs[0];
+      const max       = confs[n-1];
+
+      // Tab button
+      const tab = document.createElement('button');
+      tab.className = 'dept-tab' + (idx === 0 ? ' active' : '');
+      tab.textContent = dept;
+      tab.onclick = () => {
+        document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.dept-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('dept-panel-' + idx).classList.add('active');
+      };
+      tabsEl.appendChild(tab);
+
+      // Box plot SVG — stagger label y positions to prevent overlap including identical values
+      const svgW = 600, svgH = 110, pad = 60;
+      const scale = v => pad + ((v - 0) / 100) * (svgW - pad*2);
+      const points = [
+        { v: min,    label: `min ${min}`,       skip: min === median, below: false },
+        { v: q1,     label: `Q1 ${q1}`,         skip: false,          below: true },
+        { v: median, label: `median ${median}`, skip: false,          below: false },
+        { v: q3,     label: `Q3 ${q3}`,         skip: false,          below: true },
+        { v: max,    label: `max ${max}`,       skip: max === median, below: false },
+      ];
+      // Assign y rows for above points based on pixel proximity
+      const placed = [];
+      points.forEach(p => {
+        if (p.below) { p.y = 82; return; }
+        if (p.skip)  { p.y = 26; return; }
+        const px = scale(p.v);
+        const clash = placed.some(o => Math.abs(o.px - px) < 35);
+        p.y = clash ? (placed.filter(o => Math.abs(o.px - px) < 35).every(o => o.y === 26) ? 14 : 26) : 26;
+        placed.push({ px, y: p.y });
+      });
+      const bpSvg = `
+        <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="overflow:visible;">
+          <line x1="${pad}" y1="72" x2="${svgW-pad}" y2="72" stroke="#C5D8EE" stroke-width="1"/>
+          ${[0,25,50,75,100].map(v=>`
+            <line x1="${scale(v)}" y1="70" x2="${scale(v)}" y2="76" stroke="#C5D8EE" stroke-width="1"/>
+            <text x="${scale(v)}" y="90" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#7AAAD4">${v}</text>
+          `).join('')}
+          <line x1="${scale(min)}" y1="47" x2="${scale(q1)}" y2="47" stroke="#7AAAD4" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="${scale(q3)}" y1="47" x2="${scale(max)}" y2="47" stroke="#7AAAD4" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="${scale(min)}" y1="38" x2="${scale(min)}" y2="56" stroke="#7AAAD4" stroke-width="1.5"/>
+          <line x1="${scale(max)}" y1="38" x2="${scale(max)}" y2="56" stroke="#7AAAD4" stroke-width="1.5"/>
+          <rect x="${scale(q1)}" y="32" width="${scale(q3)-scale(q1)}" height="30" fill="rgba(24,95,165,0.15)" stroke="#185FA5" stroke-width="1.5" rx="3"/>
+          <line x1="${scale(median)}" y1="32" x2="${scale(median)}" y2="62" stroke="#185FA5" stroke-width="2.5"/>
+          ${points.filter(p => !p.skip).map(p => `<text x="${scale(p.v)}" y="${p.y}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="${p.label.startsWith('median') ? '#0C447C' : '#3A6A9E'}" font-weight="${p.label.startsWith('median') ? '500' : '400'}">${p.label}</text>`).join('')}
+        </svg>`;
+
+      // Panel
+      const panel = document.createElement('div');
+      panel.className = 'dept-panel' + (idx === 0 ? ' active' : '');
+      panel.id = 'dept-panel-' + idx;
+      panel.innerHTML = `
+        <div class="dept-data-row">
+          <div class="dept-col"><div class="dept-col-label">Total</div><div class="dept-col-value">${total}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Correctly routed</div><div class="dept-col-value">${correct}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Correct %</div><div class="dept-col-value pct">${pct(correct)}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Flagged</div><div class="dept-col-value">${flagged}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Flagged %</div><div class="dept-col-value pct">${pct(flagged)}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Redirected</div><div class="dept-col-value">${redirected}</div></div>
+          <div class="dept-col"><div class="dept-col-label">Redirected %</div><div class="dept-col-value pct">${pct(redirected)}</div></div>
+        </div>
+        <div class="dept-box-wrap">
+          <div class="dept-box-title">Confidence rating — box plot</div>
+          ${bpSvg}
+        </div>`;
+      panelsEl.appendChild(panel);
+    });
+  }
+
+  function renderOverview(tickets) {
+    const total      = tickets.length;
+    const correct    = tickets.filter(t => t.feedback === 'correct').length;
+    const flagged    = tickets.filter(t => t.flagged === true).length;
+    const redirected = tickets.filter(t => t.redirected === true).length;
+    const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '0%';
+
+    document.getElementById('ov-total').textContent        = total;
+    document.getElementById('ov-correct').textContent      = correct;
+    document.getElementById('ov-correct-pct').textContent  = pct(correct) + ' of total';
+    document.getElementById('ov-flagged').textContent      = flagged;
+    document.getElementById('ov-flagged-pct').textContent  = pct(flagged) + ' of total';
+    document.getElementById('ov-redirected').textContent   = redirected;
+    document.getElementById('ov-redirected-pct').textContent = pct(redirected) + ' of total';
+
+    // BAR CHART
+    const buckets = [0, 0, 0, 0];
+    tickets.forEach(t => {
+      const c = Number(t.CONFIDENCE) || 0;
+      if (c <= 40) buckets[0]++;
+      else if (c <= 60) buckets[1]++;
+      else if (c <= 80) buckets[2]++;
+      else buckets[3]++;
+    });
+    const maxB = Math.max(...buckets, 1);
+    buckets.forEach((b, i) => {
+      document.getElementById('bar-' + i).style.height = Math.round((b / maxB) * 100) + 'px';
+      document.getElementById('cnt-' + i).textContent = b;
+    });
+
+    // PIE CHART
+    renderPie(correct, flagged, redirected, total);
+  }
+
+  function renderPie(correct, flagged, redirected, total) {
+    const svg = document.getElementById('pie-svg');
+    svg.innerHTML = '';
+    if (total === 0) return;
+
+    const cx = 70, cy = 70, r = 60;
+    const slices = [
+      { value: correct,    color: '#5DCAA5', label: 'leg-correct',    text: 'Correctly routed' },
+      { value: flagged,    color: '#FAC775', label: 'leg-flagged',     text: 'Flagged' },
+      { value: redirected, color: '#F09595', label: 'leg-redirected',  text: 'Redirected' },
+    ];
+
+    let startAngle = -Math.PI / 2;
+    slices.forEach(s => {
+      const fraction = s.value / total;
+      const angle = fraction * 2 * Math.PI;
+      if (angle === 0) { document.getElementById(s.label).textContent = s.text + ' — 0%'; return; }
+      const endAngle = startAngle + angle;
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
+      const large = angle > Math.PI ? 1 : 0;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`);
+      path.setAttribute('fill', s.color);
+      path.setAttribute('opacity', '0.85');
+      svg.appendChild(path);
+      document.getElementById(s.label).textContent = s.text + ' — ' + Math.round(fraction * 100) + '%';
+      startAngle = endAngle;
+    });
+
+    // donut hole
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', 30);
+    circle.setAttribute('fill', '#185FA5');
+    svg.appendChild(circle);
+  }
+
+  async function getToken() {
+    return await auth.currentUser.getIdToken();
+  }
+
+  async function loadManagers() {
+    const snapshot = await db.collection('manager').get();
+    const managers = [];
+    snapshot.forEach(doc => managers.push({ doc_id: doc.id, ...doc.data() }));
+    renderManagers(managers);
+  }
+
+  function renderManagers(managers) {
+    const container = document.getElementById('managers-list');
+    if (!managers.length) { container.innerHTML = '<div class="empty-state">No managers yet.</div>'; return; }
+    container.innerHTML = `
+      <table class="mgr-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Actions</th></tr></thead>
+        <tbody id="mgr-tbody"></tbody>
+      </table>`;
+    const tbody = document.getElementById('mgr-tbody');
+    managers.forEach(m => tbody.appendChild(buildManagerRow(m)));
+  }
+
+  function buildManagerRow(m) {
+    const tr = document.createElement('tr');
+    tr.id = 'mgr-row-' + m.doc_id;
+    tr.innerHTML = `
+      <td>${m.NAME}</td>
+      <td>${m.EMAIL}</td>
+      <td>${m.DEPARTMENT}</td>
+      <td>
+        <div class="mgr-btn-actions">
+          <button class="mgr-btn mgr-btn-edit" onclick="editManager('${m.doc_id}','${m.NAME}','${m.EMAIL}','${m.DEPARTMENT}')">edit</button>
+          <button class="mgr-btn mgr-btn-delete" id="del-btn-${m.doc_id}" onclick="showDeleteConfirm('${m.doc_id}')">delete</button>
+        </div>
+        <div class="mgr-confirm-row" id="del-confirm-${m.doc_id}" style="display:none;">
+          <span class="mgr-confirm-text">delete this manager?</span>
+          <button class="mgr-btn-confirm-no" onclick="hideDeleteConfirm('${m.doc_id}')">cancel</button>
+          <button class="mgr-btn-confirm-yes" onclick="confirmDelete('${m.doc_id}')">yes, delete</button>
+        </div>
+      </td>`;
+    return tr;
+  }
+
+  function showDeleteConfirm(doc_id) {
+    document.getElementById('del-confirm-' + doc_id).style.display = 'flex';
+    document.getElementById('del-btn-' + doc_id).style.display = 'none';
+  }
+
+  function hideDeleteConfirm(doc_id) {
+    document.getElementById('del-confirm-' + doc_id).style.display = 'none';
+    document.getElementById('del-btn-' + doc_id).style.display = '';
+  }
+
+  async function confirmDelete(doc_id) {
+    const token = await getToken();
+    const res = await fetch('/delete-manager', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, doc_id })
+    });
+    if (res.ok) loadManagers();
+  }
+
+  function editManager(doc_id, name, email, dept) {
+    const tr = document.getElementById('mgr-row-' + doc_id);
+    tr.innerHTML = `
+      <td><input class="mgr-edit-input" id="edit-name-${doc_id}" value="${name}" /></td>
+      <td><input class="mgr-edit-input" id="edit-email-${doc_id}" value="${email}" /></td>
+      <td><input class="mgr-edit-input" id="edit-dept-${doc_id}" value="${dept}" /></td>
+      <td>
+        <div class="mgr-btn-actions">
+          <button class="mgr-btn mgr-btn-save" onclick="saveManager('${doc_id}')">save</button>
+          <button class="mgr-btn mgr-btn-cancel" onclick="loadManagers()">cancel</button>
+        </div>
+      </td>`;
+  }
+
+  async function saveManager(doc_id) {
+    const name  = document.getElementById('edit-name-'  + doc_id).value.trim();
+    const email = document.getElementById('edit-email-' + doc_id).value.trim();
+    const dept  = document.getElementById('edit-dept-'  + doc_id).value.trim();
+    if (!name || !email || !dept) return;
+    const token = await getToken();
+    const res = await fetch('/update-manager', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, doc_id, name, email, department: dept })
+    });
+    if (res.ok) loadManagers();
+  }
+
+  async function addManager() {
+    const name  = document.getElementById('new-name').value.trim();
+    const email = document.getElementById('new-email').value.trim();
+    const dept  = document.getElementById('new-dept').value.trim();
+    const btn   = document.getElementById('add-manager-btn');
+    const msg   = document.getElementById('add-msg');
+    if (!name || !email || !dept) { msg.style.color = '#A32D2D'; msg.textContent = 'All fields required.'; return; }
+    btn.disabled = true; btn.textContent = 'Adding...'; msg.textContent = '';
+    const token = await getToken();
+    const res = await fetch('/add-manager', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, name, email, department: dept })
+    });
+    if (res.ok) {
+      msg.style.color = '#1D9E75'; msg.textContent = 'Manager added.';
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-email').value = '';
+      document.getElementById('new-dept').value = '';
+      loadManagers();
+    } else {
+      msg.style.color = '#A32D2D'; msg.textContent = 'Failed to add manager.';
+    }
+    btn.disabled = false; btn.textContent = 'Add manager';
+  }
+
+  async function loadPrompt() {
+    const snapshot = await db.collection('prompt').limit(1).get();
+    if (snapshot.empty) return;
+    const doc = snapshot.docs[0];
+    document.getElementById('prompt-textarea').value = doc.data().PROMPT || '';
+    document.getElementById('prompt-textarea').dataset.docId = doc.id;
+  }
+
+  async function savePrompt() {
+    const textarea = document.getElementById('prompt-textarea');
+    const btn      = document.getElementById('prompt-save-btn');
+    const msg      = document.getElementById('prompt-msg');
+    const docId    = textarea.dataset.docId;
+    const value    = textarea.value.trim();
+    if (!value || !docId) return;
+    btn.disabled = true; btn.textContent = 'Saving...'; msg.textContent = '';
+    try {
+      await db.collection('prompt').doc(docId).update({ PROMPT: value });
+      msg.style.color = '#1D9E75'; msg.textContent = 'Prompt saved.';
+    } catch(e) {
+      msg.style.color = '#A32D2D'; msg.textContent = 'Failed to save.';
+    }
+    btn.disabled = false; btn.textContent = 'Save prompt';
+  }
+
+  function switchPromptTab(tab) {
+    document.querySelectorAll('.prompt-main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.prompt-main-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.prompt-main-tab[onclick="switchPromptTab('${tab}')"]`).classList.add('active');
+    document.getElementById('prompt-tab-' + tab).classList.add('active');
+  }
+
+  function switchAddTab(tab) {
+    document.querySelectorAll('.ex-add-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ex-add-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.ex-add-tab[onclick="switchAddTab('${tab}')"]`).classList.add('active');
+    document.getElementById('ex-add-' + tab).classList.add('active');
+  }
+
+  function switchExTab(tab) {
+    document.querySelectorAll('.ex-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ex-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.ex-tab[onclick="switchExTab('${tab}')"]`).classList.add('active');
+    document.getElementById('ex-panel-' + tab).classList.add('active');
+  }
+
+  async function loadExamples() {
+    const container = document.getElementById('examples-list');
+    const snapshot = await db.collection('examples').get();
+    if (snapshot.empty) { container.innerHTML = '<div class="empty-state">No examples yet.</div>'; return; }
+    container.innerHTML = '';
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      const card = document.createElement('div');
+      card.className = 'ex-card';
+      card.innerHTML = `
+        <div class="ex-card-header">
+          <span class="ex-dept">${d.DEPARTMENT}</span>
+          <button class="ex-btn-delete" onclick="deleteExample('${doc.id}')">delete</button>
+        </div>
+        <div class="ex-ticket">${d.TICKET}</div>
+        <div class="ex-reason">${d.REASON}</div>`;
+      container.appendChild(card);
+    });
+  }
+
+  async function deleteExample(doc_id) {
+    await db.collection('examples').doc(doc_id).delete();
+    loadExamples();
+  }
+
+  function loadCorrectTickets() {
+    const container = document.getElementById('correct-tickets-list');
+    db.collection('tickets').where('feedback', '==', 'correct').onSnapshot(snapshot => {
+      if (snapshot.empty) { container.innerHTML = '<div class="empty-state">No correctly routed tickets yet.</div>'; return; }
+      container.innerHTML = '';
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        const card = document.createElement('div');
+        card.className = 'ex-card';
+        card.innerHTML = `
+          <div class="ex-card-header">
+            <span class="ex-dept">${t.DEPARTMENT}</span>
+            <button class="ex-btn-add" id="add-ex-btn-${doc.id}" onclick="addExample('${doc.id}', 'correct')">+ add as example</button>
+          </div>
+          <div class="ex-ticket">${t.ACTUAL_TICKET}</div>
+          <div class="ex-reason">${t.REASON}</div>`;
+        container.appendChild(card);
+      });
+    });
+
+    const rContainer = document.getElementById('redirected-tickets-list');
+    db.collection('tickets').where('redirected', '==', true).onSnapshot(snapshot => {
+      if (snapshot.empty) { rContainer.innerHTML = '<div class="empty-state">No redirected tickets yet.</div>'; return; }
+      rContainer.innerHTML = '';
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        const card = document.createElement('div');
+        card.className = 'ex-card';
+        card.innerHTML = `
+          <div class="ex-card-header">
+            <span class="ex-dept" style="background:#A32D2D;border-color:#A32D2D;color:#fff;">${t.original_department || t.DEPARTMENT} → ${t.DEPARTMENT}</span>
+            <button class="ex-btn-add" id="add-ex-btn-r-${doc.id}" onclick="addExample('${doc.id}', 'redirected')">+ add as example</button>
+          </div>
+          <div class="ex-ticket">${t.ACTUAL_TICKET}</div>
+          <div class="ex-reason">${t.REASON}</div>`;
+        rContainer.appendChild(card);
+      });
+    });
+  }
+
+  async function addExample(ticket_doc_id, type) {
+    const btnId = type === 'redirected' ? 'add-ex-btn-r-' + ticket_doc_id : 'add-ex-btn-' + ticket_doc_id;
+    const btn = document.getElementById(btnId);
+    btn.disabled = true; btn.textContent = 'Adding...';
+    const ticketDoc = await db.collection('tickets').doc(ticket_doc_id).get();
+    const t = ticketDoc.data();
+    const exampleData = {
+      TICKET: t.ACTUAL_TICKET,
+      DEPARTMENT: t.DEPARTMENT,
+      REASON: t.REASON,
+      TYPE: type
+    };
+    if (type === 'redirected') {
+      exampleData.ORIGINAL_DEPARTMENT = t.original_department || 'UNKNOWN';
+    }
+    await db.collection('examples').add(exampleData);
+    btn.textContent = 'Added ✓';
+    loadExamples();
+  }
+
+  init();
+</script>
+</body>
+</html>
