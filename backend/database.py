@@ -4,7 +4,7 @@ Service_account = credentials.Certificate('backend/serviceAccountKey.json')
 app = initialize_app(Service_account)
 db = firestore.client(app)
 
-def save_to_db(decision,manager,flagged):
+def save_to_db(decision,manager,flagged,client_email=None):
      db.collection('tickets').add({
         "DEPARTMENT": decision["department"],
         "MANAGER": decision["manager"],
@@ -15,8 +15,8 @@ def save_to_db(decision,manager,flagged):
         "timestamp": firestore.SERVER_TIMESTAMP,
         "feedback": None,
         "flagged": flagged,
-        "original_manager_email": manager["EMAIL"]
-        
+        "original_manager_email": manager["EMAIL"],
+        "CLIENT_EMAIL": client_email
     })
      
 def get_managers():
@@ -67,3 +67,17 @@ def get_examples():
     redirected = [doc.to_dict() for doc in db.collection('examples').where('TYPE', '==', 'redirected').limit(5).stream()]
     examples = correct + redirected
     return examples
+
+def get_clients():
+    clients=[]
+    for doc in db.collection('clients').stream():
+        clients.append(doc.to_dict())
+     
+    return clients
+
+def add_clients(name,email,student_staff_number,type):
+    db.collection('clients').add({"NAME":name,
+                                  "EMAIL":email,
+                                  "TYPE":type,
+                                  "STUDENT_STAFF_NUMBER":student_staff_number
+})

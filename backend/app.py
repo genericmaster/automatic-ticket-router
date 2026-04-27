@@ -6,16 +6,12 @@ from firebase_admin import auth
 import logging
 from flask import Flask,request,send_file,jsonify
 from flask_cors import CORS
-from ollama_client import Route_email
-from router import Route_decision
-from notifier import handler
-from database import save_to_db, redirect_ticket_db, get_managers, add_manager, update_manager, delete_manager
-from config import CONFIDENCE_THRESHOLD,ADMINS
+from services.ticket_service import process_ticket
+from services.redirect_service import  redirect_ticket_service
+from database import get_managers, add_manager, update_manager, delete_manager,get_clients
+from config import ADMINS
 
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'pages')
-load_dotenv(dotenv_path=os.path.join(BASE_DIR, '.env'))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'pages', 'static'))
 
@@ -23,32 +19,34 @@ app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'pages', 'static'))
 CORS(app, origins=["http://127.0.0.1:5000", "http://localhost:5000"])
 
 @app.route('/ticket', methods=['POST'])
-def handle_icket():
+def handle_ticket():
     data = request.get_json()
+    
     if not data:
      return jsonify({"error": "invalid request"}), 400
+    token = data.get('token')
     email = data.get('email')
-    if not email:
-     return jsonify({"error": "email is required"}), 400
 
-    DECISION = Route_email(email)
-    HANDLER = Route_decision(DECISION)
-    if int(DECISION["confidence_rating"])>=CONFIDENCE_THRESHOLD and int(DECISION["confidence_rating"])<=100:
-      subject = "new ticket routed to you"
-      flagged = False
-    else:
-        subject = "⚠️ LOW CONFIDENCE — Please verify this routing"
-        flagged = True
-       
-    save_to_db(DECISION,HANDLER,flagged)
-    handler(HANDLER,DECISION,subject)
-    return  "Ticket routed successfully"
+    if not token or not email:
+        return jsonify({"error": "token and email are required"}), 400
+    try:
+        verified = auth.verify_id_token(token)
+        client_email = verified['email']
+    except:
+        return jsonify({"error": "unauthorized"}), 401
+    try:
+       return process_ticket(email,client_email)
+    except Exception as e:
+        logging.error(e)
+        return jsonify({"error": "something went wrong"}), 500
 
 
+@app.route ('/client',methods=['GET'])
+def client():
+      return send_file(os.path.join(FRONTEND_DIR,'client', 'client.html'))
 @app.route('/form', methods=['GET'])
-def front():
+def form():
    return send_file(os.path.join(FRONTEND_DIR,'form', 'form.html'))
-
 @app.route('/dashboard',methods=['GET'])
 def dashboard():
     return send_file(os.path.join(FRONTEND_DIR, 'dashboard', 'dashboard.html'))
@@ -70,22 +68,20 @@ def get_firebase_config():
 
 @app.route('/redirect-ticket',methods=['POST'])
 def redirect_ticket():
-    data = request.get_json()
-    ticket_id = data["ticket_id"]
-    new_department = data["new_department"]
-    manager_list = get_managers()
-    new_manager = next((m for m in manager_list if m['DEPARTMENT'] == new_department), None)
-    ticket_data = redirect_ticket_db(ticket_id, new_manager, new_department)
-    
-    mapped_data = {
-    "department": ticket_data["DEPARTMENT"],
-    "reason": ticket_data["REASON"],
-    "original_email_text": ticket_data["ACTUAL_TICKET"],
-    "confidence_rating": ticket_data["CONFIDENCE"]
-    }   
-    handler(new_manager, mapped_data) 
+    try:
+        data = request.get_json()
+        if not data:
+         return jsonify({"error": "invalid request"}), 400
+        ticket_id = data["ticket_id"]
+        new_department = data["new_department"]
+    except KeyError as e:
+     return jsonify({"error": "department not found"}), 404
+    try:
+       return  redirect_ticket_service(ticket_id,new_department)
+    except Exception as e:
+     logging.error(e)
+     return jsonify({"error": "something went wrong"}), 500
 
-    return "success"
     
 @app.route ('/login',methods=['GET'])
 def login():
@@ -99,18 +95,20 @@ def role_check():
         verify_token = auth.verify_id_token(token_id)
         email = verify_token['email']
         manager_list=get_managers()
-        print(email)
-        if any(email == m['EMAIL'] for m in manager_list):
-         return jsonify({ "role": "manager" })
-        elif email in ADMINS:
+        if email in ADMINS:
          return jsonify({ "role": "admin" })
+        
+        elif any(email == m['EMAIL'] for m in manager_list):
+         return jsonify({ "role": "manager" })
+        
+        elif any(email == c['EMAIL'] for c in get_clients()):
+          return jsonify({ "role": "client" })
         else:
            return jsonify({ "role": "unknown" })
            
-    except:
-      logging.error("user not found")
-      return jsonify({ "role": "unknown" })
-      
+    except Exception as e:
+       logging.error(f"Role check failed: {e}")
+       return jsonify({ "role": "unknown" })
 @app.route ("/admin",methods=['GET'])
 def admin():
    return send_file(os.path.join(FRONTEND_DIR,'admin', 'admin.html'))    
@@ -159,6 +157,7 @@ def delete_manager_route():
     except Exception as e:
         logging.error(e)
         return jsonify({"error": "failed"}), 500 
+    
     
 if __name__ == "__main__":
    app.run()

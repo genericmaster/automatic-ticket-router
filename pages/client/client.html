@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wits — Client Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="/static/client/client.css">
+</head>
+<body>
+
+<div id="client-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">Wits — Support Portal</span>
+      <span class="topbar-user" id="client-email"></span>
+    </div>
+    <button class="btn-logout" id="logout-btn">sign out</button>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-section">Navigation</div>
+      <button class="nav-item active" onclick="navigate('submit')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 2v12M2 8h12"/>
+        </svg>
+        Submit ticket
+      </button>
+      <button class="nav-item" onclick="navigate('history')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="7" height="3" rx="1"/>
+        </svg>
+        My tickets
+      </button>
+    </div>
+
+    <div class="main">
+
+      <!-- SUBMIT -->
+      <div class="page active" id="page-submit">
+        <div class="page-title">Submit a ticket</div>
+        <div class="submit-section">
+          <div class="field">
+            <label>Subject</label>
+            <input type="text" id="subject" placeholder="Brief description of your issue" />
+          </div>
+          <div class="field">
+            <label>Describe your issue</label>
+            <textarea id="body" placeholder="Please provide as much detail as possible..."></textarea>
+          </div>
+          <button class="btn-submit" id="submit-btn" onclick="submitTicket()">Submit ticket</button>
+          <div class="submit-msg" id="submit-msg"></div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="page" id="page-history">
+        <div class="page-title">My tickets</div>
+        <div class="tickets-list" id="tickets-list"><div class="loading">Loading...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let auth, db, currentUser;
+
+  function navigate(page) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[onclick="navigate('${page}')"]`).classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+  }
+
+  async function init() {
+    const res = await fetch('/firebase-config');
+    const config = await res.json();
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) { window.location.href = '/login'; return; }
+
+      const token = await user.getIdToken();
+      const roleRes = await fetch('/role-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const roleData = await roleRes.json();
+      if (roleData.role !== 'client') { window.location.href = '/login'; return; }
+
+      currentUser = user;
+      document.getElementById('client-email').textContent = user.email;
+      const screen = document.getElementById('client-screen');
+      screen.style.display = 'flex';
+      screen.style.flexDirection = 'column';
+      loadTickets(user.email);
+    });
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', () =>
+    auth.signOut().then(() => window.location.href = '/login')
+  );
+
+  async function submitTicket() {
+    const subject = document.getElementById('subject').value.trim();
+    const body    = document.getElementById('body').value.trim();
+    const btn     = document.getElementById('submit-btn');
+    const msg     = document.getElementById('submit-msg');
+
+    if (!subject || !body) {
+      msg.className = 'submit-msg error';
+      msg.textContent = 'Please fill in both fields.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    msg.className = 'submit-msg';
+
+    try {
+      const token = await currentUser.getIdToken();
+      const emailText = `From: ${currentUser.email}\nSubject: ${subject}\n\n${body}`;
+
+      const res = await fetch('/ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, email: emailText })
+      });
+
+      if (res.ok) {
+        msg.className = 'submit-msg success';
+        msg.textContent = 'Your ticket has been submitted and routed to the right team.';
+        document.getElementById('subject').value = '';
+        document.getElementById('body').value = '';
+        navigate('history');
+      } else {
+        throw new Error();
+      }
+    } catch {
+      msg.className = 'submit-msg error';
+      msg.textContent = 'Something went wrong. Please try again.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit ticket';
+  }
+
+  function loadTickets(email) {
+    db.collection('tickets')
+      .where('CLIENT_EMAIL', '==', email)
+      .orderBy('timestamp', 'desc')
+      .onSnapshot(snapshot => {
+        const tickets = [];
+        snapshot.forEach(doc => tickets.push({ id: doc.id, ...doc.data() }));
+        renderTickets(tickets);
+      }, err => console.error(err));
+  }
+
+  function getStatus(t) {
+    if (t.resolved) return { label: 'Resolved',          cls: 'status-resolved' };
+    if (t.redirected) return { label: 'Redirected',      cls: 'status-redirected' };
+    if (t.feedback === 'correct') return { label: 'Correctly routed', cls: 'status-correct' };
+    return { label: 'Routed',                            cls: 'status-routed' };
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    return new Date(ts.seconds * 1000).toLocaleString();
+  }
+
+  function renderTickets(tickets) {
+    const container = document.getElementById('tickets-list');
+    if (!tickets.length) {
+      container.innerHTML = '<div class="empty-state">You have not submitted any tickets yet.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    tickets.forEach(t => {
+      const status = getStatus(t);
+      const showResolveBanner = !t.resolved;
+
+      const card = document.createElement('div');
+      card.className = 'ticket-card';
+      card.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') return;
+        window.location.href = '/ticket-detail?id=' + t.id + '&from=/client';
+      });
+
+      card.innerHTML = `
+        <div class="ticket-header">
+          <span class="ticket-dept">${t.DEPARTMENT || '—'}</span>
+          <span class="ticket-status ${status.cls}">${status.label}</span>
+        </div>
+        ${showResolveBanner ? `
+        <div class="resolve-banner">
+          <span class="resolve-banner-text">Has your issue been resolved? Let us know to help us track outcomes.</span>
+          <button class="btn-resolve" onclick="markResolved('${t.id}')">Mark as resolved</button>
+        </div>` : ''}
+        <div class="ticket-body">${t.ACTUAL_TICKET || 'No content'}</div>
+        <div class="ticket-footer">
+          <span class="ticket-time">${fmtTime(t.timestamp)}</span>
+        </div>`;
+      container.appendChild(card);
+    });
+  }
+
+  async function markResolved(id) {
+    await db.collection('tickets').doc(id).update({ resolved: true });
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -60,7 +60,10 @@
         window.location.href = '/admin';
       } else if (data.role === 'manager') {
         window.location.href = '/dashboard';
-      } else {
+      } else if (data.role === 'client') {
+        window.location.href = '/client';
+      }
+       else {
         await auth.signOut();
         err.textContent = 'Access denied. You are not registered as a manager or admin.';
         err.style.display = 'block';
